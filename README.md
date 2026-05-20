@@ -221,6 +221,8 @@ Para contribuir com o projeto:
 
     Abra um Pull Request
 
+---
+
 ## 📞 Suporte
 
 Para dúvidas ou problemas:
@@ -240,7 +242,7 @@ Este projeto está sob a licença **MIT**. Veja o arquivo [LICENSE](LICENSE) par
 
 **Seu Nome**
 - GitHub: [@wjr007](https://github.com/wjr007)
-- LinkedIn: [[linkedin](https://www.linkedin.com/in/walteir-luiz-de-morais-junior-42a21928a/)]
+- LinkedIn: [linkedin][(https://www.linkedin.com/in/walteir-luiz-de-morais-junior-42a21928a/)]
 
 ---
 
@@ -250,4 +252,3 @@ Desenvolvido para a comunidade médica.
 
 **Última atualização:** 2026-05-20
 
-    LinkedIn: [linkedin]
