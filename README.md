@@ -221,21 +221,33 @@ Para contribuir com o projeto:
 
     Abra um Pull Request
 
-📞 Suporte
+## 📞 Suporte
 
 Para dúvidas ou problemas:
 
-    📧 Email: junior57k@gmail.com
+- 📧 Email: [junior57k@gmail.com]
+- 🐛 Issues: [GitHub Issues](https://github.com/wjr007/Projeto-MedSystem---SaaS-/issues)
+- 💬 Discussões: [GitHub Discussions](https://github.com/wjr007/Projeto-MedSystem---SaaS-/discussions)
 
-    🐛 Issues: GitHub Issues
 
-📄 Licença
+## 📄 Licença
 
-Este projeto está sob a licença MIT. Veja o arquivo LICENSE para mais detalhes.
-👨‍💻 Autor
+Este projeto está sob a licença **MIT**. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
 
-Walteir Luiz de Morais Junior
+---
 
-    GitHub: @wjr007
+## 👨‍💻 Autor
+
+**Seu Nome**
+- GitHub: [@wjr007](https://github.com/wjr007)
+- LinkedIn: [[linkedin](https://www.linkedin.com/in/walteir-luiz-de-morais-junior-42a21928a/)]
+
+---
+
+## 🎉 Créditos
+
+Desenvolvido para a comunidade médica. 
+
+**Última atualização:** 2026-05-20
 
     LinkedIn: [linkedin]
