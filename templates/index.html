@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MedSystem — Sistema Médico</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="{{ url_for('static', filename='v10/style.css') }}"/>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-left">
+    <div class="login-brand">
+      <div class="login-brand-icon">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8" stroke-width="2.5" stroke-linecap="round"/></svg>
+      </div>
+      <div>
+        <div class="login-brand-name">MedSystem</div>
+        <div class="login-brand-sub">Sistema Médico Profissional</div>
+      </div>
+    </div>
+    <div class="login-headline">Gestão clínica<br/><span>simplificada e</span><br/>eficiente.</div>
+    <div class="login-desc">Plataforma completa para gerenciamento de pacientes, consultas, exames e diagnósticos com segurança e agilidade.</div>
+    <div class="login-features">
+      <div class="login-feat"><div class="login-feat-dot">🔐</div>Acesso Seguro e Criptografado</div>
+      <div class="login-feat"><div class="login-feat-dot">🗂️</div>Gestão de Prontuários Eletrônicos</div>
+      <div class="login-feat"><div class="login-feat-dot">📊</div>Dashboard em tempo real com alertas clínicos</div>
+      <div class="login-feat"><div class="login-feat-dot">📅</div>Agendamento Inteligente de Consultas</div>
+    </div>
+  </div>
+
+  <div class="login-right">
+    <div class="login-card">
+      <div class="login-card-title">Bem-vindo de volta 👋</div>
+      <div class="login-card-sub">Acesse sua conta para continuar</div>
+      <div class="login-hint">
+        <strong>Credenciais de Acesso</strong>
+        Login: <code>medico@medsystem.com</code><br/>
+        Senha: <code>123456</code>
+      </div>
+      <div id="login-error" class="login-error">⚠ E-mail ou senha incorretos. Tente novamente.</div>
+      <div class="login-field">
+        <label>E-mail</label>
+        <input type="email" id="login-email" placeholder="seu@email.com" value="medico@medsystem.com"/>
+      </div>
+      <div class="login-field">
+        <label>Senha</label>
+        <input type="password" id="login-senha" placeholder="••••••" value="123456" onkeydown="if(event.key==='Enter')doLogin()"/>
+      </div>
+      <button class="login-btn" onclick="doLogin()" id="login-btn">
+        <svg viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
+        Entrar no sistema
+      </button>
+      <div class="login-footer">MedSystem v1.0 · © 2026 · Todos os direitos reservados</div>
+    </div>
+  </div>
+</div>
+
+<div id="app-screen" style="display: none;">
+
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-mark">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M12 8v8M8 12h8" stroke-width="2.5" stroke-linecap="round"/></svg>
+      </div>
+      <div>
+        <div class="logo-text">MedSystem</div>
+        <div class="logo-sub">Sistema Médico</div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="nav">
+    <div class="nav-section">Principal</div>
+    <button class="nav-item active" onclick="showPage('dashboard')">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </button>
+    <button class="nav-item" onclick="showPage('consulta')">
+      <svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>
+      Consultas
+    </button>
+    <button class="nav-item" onclick="showPage('pacientes')">
+      <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+      Pacientes
+    </button>
+    <button class="nav-item" onclick="showPage('exames')">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+      Exames
+    </button>
+    <button class="nav-item" onclick="showPage('diagnostico')">
+      <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      Diagnósticos
+    </button>
+
+    <div class="nav-section" style="margin-top:12px">Gestão</div>
+    <button class="nav-item" onclick="showPage('novo_paciente')">
+      <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+      Novo Paciente
+    </button>
+    <button class="nav-item" onclick="showPage('nova_consulta')">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="10" y1="16" x2="14" y2="16"/></svg>
+      Agendar Consulta
+    </button>
+    <button class="nav-item" onclick="showPage('perfil')">
+      <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Meu Perfil
+    </button>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="user-chip">
+      <div class="avatar" onclick="showPage('perfil')" title="Ver perfil" id="sidebar-avatar">DM</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;color:var(--text)" id="sidebar-name">Dr. Mendonça</div>
+        <div id="sidebar-role">Clínica Geral</div>
+      </div>
+      <button class="logout-btn" onclick="doLogout()" title="Sair">Sair</button>
+    </div>
+  </div>
+</aside>
+
+<main class="main">
+
+  <div id="page-dashboard" class="page active">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Dashboard</div>
+        <div class="page-sub">Visão geral — <span id="hoje"></span></div>
+      </div>
+      <button class="btn btn-primary" onclick="showPage('nova_consulta')">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg> Nova Consulta
+      </button>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Consultas Hoje</div>
+        <div class="stat-value" id="dash-consultas">0</div>
+        <div class="stat-delta">Atualizado agora</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Pacientes Ativos</div>
+        <div class="stat-value" id="dash-pacientes">0</div>
+        <div class="stat-delta">Total cadastrado</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Exames Pendentes</div>
+        <div class="stat-value" id="dash-exames" style="color:var(--amber-light)">0</div>
+        <div class="stat-delta warn">No laboratório</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Casos Críticos</div>
+        <div class="stat-value" style="color:var(--red-light)">1</div>
+        <div class="stat-delta danger">● Atenção imediata</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="page-consulta" class="page">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Consultas</div>
+        <div class="page-sub">Histórico e agendamentos</div>
+      </div>
+      <button class="btn btn-primary" onclick="showPage('nova_consulta')">Agendar Consulta</button>
+    </div>
+    <div class="card section-gap">
+      <div class="card-header"><span class="card-title">Lista de Consultas</span></div>
+      <div class="table-wrap">
+        <table id="tabela-consultas">
+          <thead><tr><th>Paciente</th><th>Data</th><th>Médico</th><th>Motivo</th><th>Status</th><th>Ação</th></tr></thead>
+          <tbody>
+            <tr>
+              <td class="td-name">Roberto Nascimento</td><td class="td-mono">10/05/2025 11:00</td>
+              <td>Dra. Ana Ferreira</td><td>Dor no peito</td>
+              <td><span class="badge badge-amber">Agendada</span></td>
+              <td><button class="btn btn-outline" onclick="showPage('prontuario')">Abrir</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="page-pacientes" class="page">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Pacientes</div>
+        <div class="page-sub">Lista completa de pacientes cadastrados</div>
+      </div>
+      <button class="btn btn-primary" onclick="showPage('novo_paciente')">Novo Paciente</button>
+    </div>
+    <div class="card section-gap">
+      <div class="card-header"><span class="card-title">Todos os Pacientes</span></div>
+      <div class="table-wrap">
+        <table id="tabela-pacientes">
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>CPF</th>
+              <th>Nascimento</th>
+              <th>Telefone</th>
+              <th>Ação</th>
+            </tr>
+          </thead>
+          <tbody>
+            </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="page-prontuario" class="page">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Ficha do Paciente</div>
+        <div class="page-sub">João da Silva — visualização completa</div>
+      </div>
+      <button class="btn btn-outline" onclick="showPage('pacientes')">← Voltar</button>
+    </div>
+    <div class="two-col">
+      <div class="patient-card">
+        <div class="patient-header">
+          <div class="patient-avatar">JS</div>
+          <div class="patient-name">João da Silva</div>
+        </div>
+        <div class="patient-body">
+          <div class="info-row"><span class="info-key">CPF</span><span class="info-val td-mono">111.222.333-01</span></div>
+          <div class="info-row"><span class="info-key">Alergias</span><span class="info-val"><span class="allergy-tag">⚠ Penicilina</span></span></div>
+        </div>
+      </div>
+      <div>
+        <div class="card section-gap">
+          <div class="card-header"><span class="card-title">Sinais Vitais — Última Consulta</span></div>
+          <div class="card-body">
+            <div class="vitals-grid">
+              <div class="vital-item vital-warn"><div class="vital-label">Pressão Arterial</div><div class="vital-val">130/85</div></div>
+              <div class="vital-item vital-ok"><div class="vital-label">FC</div><div class="vital-val">72</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="page-exames" class="page">
+    <div class="page-header">
+      <div class="page-title">Exames</div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Todos os Exames</span></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Paciente</th><th>Exame</th><th>Resultado</th></tr></thead>
+          <tbody>
+            <tr><td class="td-name">João da Silva</td><td>Hemograma</td><td>Normal</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="page-diagnostico" class="page">
+    <div class="page-header"><div class="page-title">Diagnósticos</div></div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Histórico</span></div>
+      <div class="card-body">
+        <div class="dx-card moderada"><div class="dx-cid">CID-10: G44.3</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="page-novo_paciente" class="page">
+    <div class="page-header">
+      <div class="page-title">Novo Paciente</div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Dados do Paciente</span></div>
+      <div class="card-body">
+        <div class="form-grid">
+          <div class="form-group"><label>Nome completo *</label><input id="np-nome" placeholder="Nome Sobrenome"/></div>
+          <div class="form-group"><label>CPF *</label><input id="np-cpf" placeholder="000.000.000-00" oninput="mascaraCPF(this)"/></div>
+          <div class="form-group"><label>Data de Nascimento *</label><input id="np-nasc" type="date"/></div>
+          
+          <div class="form-group">
+            <label>Sexo *</label>
+            <select id="np-sexo">
+              <option value="M">Masculino</option>
+              <option value="F">Feminino</option>
+              <option value="O">Outro</option>
+            </select>
+          </div>
+
+          <div class="form-group"><label>Telefone</label><input id="np-tel" placeholder="(XX) 9XXXX-XXXX" oninput="mascaraTel(this)"/></div>
+        </div>
+        <div class="flex-end" style="margin-top:20px;">
+          <button class="btn btn-outline" onclick="limparForm()">Limpar</button>
+          <button class="btn btn-primary" onclick="cadastrarPaciente()">Cadastrar Paciente</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="page-nova_consulta" class="page">
+    <div class="page-header">
+      <div class="page-title">Agendar Consulta</div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Dados da Consulta</span></div>
+      <div class="card-body">
+        <div class="form-grid">
+          <div class="form-group full"><label>Paciente *</label><select id="nc-pac"><option value="">Carregando...</option></select></div>
+          <div class="form-group"><label>Médico *</label><select id="nc-med"><option value="">Carregando...</option></select></div>
+          <div class="form-group"><label>Data *</label><input id="nc-data" type="date"/></div>
+          <div class="form-group full"><label>Motivo da consulta *</label><textarea id="nc-motivo"></textarea></div>
+        </div>
+        <div class="flex-end" style="margin-top:20px;">
+          <button class="btn btn-primary" onclick="agendarConsulta()">Confirmar Agendamento</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="page-perfil" class="page">
+    <div class="page-header"><div class="page-title">Meu Perfil</div></div>
+    <div class="card">
+      <div class="card-body">
+        <div class="form-grid">
+          <div class="form-group"><label>Nome Completo</label><input id="p-nome"/></div>
+          <div class="form-group"><label>E-mail</label><input id="p-email"/></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<div class="toast-area" id="toastArea"></div>
+<script src="{{ url_for('static', filename='v10/script.js') }}"></script>
+</body>
+</html>
