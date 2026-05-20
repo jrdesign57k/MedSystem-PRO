@@ -292,11 +292,10 @@ chore: Tarefas de manutenção
 
 Para dúvidas ou problemas:
 
-- 📧 Email: [seu-email@exemplo.com]
+- 📧 Email: [junior57k@gmail.com]
 - 🐛 Issues: [GitHub Issues](https://github.com/wjr007/Projeto-MedSystem---SaaS-/issues)
 - 💬 Discussões: [GitHub Discussions](https://github.com/wjr007/Projeto-MedSystem---SaaS-/discussions)
 
----
 
 ## 📄 Licença
 
@@ -308,12 +307,12 @@ Este projeto está sob a licença **MIT**. Veja o arquivo [LICENSE](LICENSE) par
 
 **Seu Nome**
 - GitHub: [@wjr007](https://github.com/wjr007)
-- LinkedIn: [seu-linkedin]
+- LinkedIn: [[seu-linkedin](https://www.linkedin.com/in/walteir-luiz-de-morais-junior-42a21928a/)]
 
 ---
 
 ## 🎉 Créditos
 
-Desenvolvido com ❤️ para a comunidade médica.
+Desenvolvido para a comunidade médica. 
 
 **Última atualização:** 2026-05-20
