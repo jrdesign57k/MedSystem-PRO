@@ -307,7 +307,7 @@ Este projeto está sob a licença **MIT**. Veja o arquivo [LICENSE](LICENSE) par
 
 **Seu Nome**
 - GitHub: [@wjr007](https://github.com/wjr007)
-- LinkedIn: [[seu-linkedin](https://www.linkedin.com/in/walteir-luiz-de-morais-junior-42a21928a/)]
+- LinkedIn: [[linkedin](https://www.linkedin.com/in/walteir-luiz-de-morais-junior-42a21928a/)]
 
 ---
 
