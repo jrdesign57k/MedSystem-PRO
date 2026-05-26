@@ -32,21 +32,21 @@
 
   <div class="login-right">
     <div class="login-card">
-      <div class="login-card-title">Bem-vindo de volta 👋</div>
-      <div class="login-card-sub">Acesse sua conta para continuar</div>
-      <div class="login-hint">
-        <strong>Credenciais de Acesso</strong>
-        Login: <code>medico@medsystem.com</code><br/>
-        Senha: <code>123456</code>
+      <div class="login-card-title">Bem-vindo 👋</div>
+      <div class="login-card-sub">Acesse sua conta MedSystem</div>
+      <div class="login-logo" style="text-align: center; margin: 20px 0;">
+        <div style="font-size: 48px; margin-bottom: 8px;">🏥</div>
+        <div style="font-size: 18px; font-weight: 600; color: #1a202c;">MedSystem</div>
+        <div style="font-size: 12px; color: #718096;">Sistema de Gestão Médica</div>
       </div>
-      <div id="login-error" class="login-error">⚠ E-mail ou senha incorretos. Tente novamente.</div>
+      <div id="login-error" class="login-error" style="display:none;"></div>
       <div class="login-field">
         <label>E-mail</label>
         <input type="email" id="login-email" placeholder="seu@email.com" value="medico@medsystem.com"/>
       </div>
       <div class="login-field">
         <label>Senha</label>
-        <input type="password" id="login-senha" placeholder="••••••" value="123456" onkeydown="if(event.key==='Enter')doLogin()"/>
+        <input type="password" id="login-senha" placeholder="••••••" value="MedSystem12#" onkeydown="if(event.key==='Enter')doLogin()"/>
       </div>
       <button class="login-btn" onclick="doLogin()" id="login-btn">
         <svg viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
@@ -57,7 +57,7 @@
   </div>
 </div>
 
-<div id="app-screen" style="display: none;">
+<div id="app-screen">
 
 <aside class="sidebar">
   <div class="logo">
@@ -108,6 +108,18 @@
       <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
       Meu Perfil
     </button>
+
+    <div id="nav-admin" style="display:none;">
+      <div class="nav-section" style="margin-top:12px">Administração</div>
+      <button class="nav-item" onclick="showPage('usuarios')">
+        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+        Usuários
+      </button>
+      <button class="nav-item" onclick="showPage('medicos'); carregarMedicos();">
+        <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/><path d="M12 12h0M12 3c-.6 0-1.1.2-1.5.6m3 0c.4.4.6.9.6 1.4M12 20c2 1 4 1 6 0"/></svg>
+        Médicos
+      </button>
+    </div>
   </nav>
 
   <div class="sidebar-footer">
@@ -157,6 +169,16 @@
         <div class="stat-delta danger">● Atenção imediata</div>
       </div>
     </div>
+
+    <div class="card section-gap" style="margin-top: 24px;">
+      <div class="card-header"><span class="card-title">Consultas de Hoje</span></div>
+      <div class="table-wrap">
+        <table id="tabela-dash-consultas">
+          <thead><tr><th>Paciente</th><th>Horário</th><th>Status</th></tr></thead>
+          <tbody><tr><td colspan="3" style="text-align: center;">Carregando...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
   <div id="page-consulta" class="page">
@@ -173,12 +195,7 @@
         <table id="tabela-consultas">
           <thead><tr><th>Paciente</th><th>Data</th><th>Médico</th><th>Motivo</th><th>Status</th><th>Ação</th></tr></thead>
           <tbody>
-            <tr>
-              <td class="td-name">Roberto Nascimento</td><td class="td-mono">10/05/2025 11:00</td>
-              <td>Dra. Ana Ferreira</td><td>Dor no peito</td>
-              <td><span class="badge badge-amber">Agendada</span></td>
-              <td><button class="btn btn-outline" onclick="showPage('prontuario')">Abrir</button></td>
-            </tr>
+            <tr><td colspan="6" style="text-align: center;">Carregando consultas...</td></tr>
           </tbody>
         </table>
       </div>
@@ -207,7 +224,8 @@
             </tr>
           </thead>
           <tbody>
-            </tbody>
+            <tr><td colspan="5" style="text-align: center;">Carregando pacientes...</td></tr>
+          </tbody>
         </table>
       </div>
     </div>
@@ -217,19 +235,19 @@
     <div class="page-header">
       <div>
         <div class="page-title">Ficha do Paciente</div>
-        <div class="page-sub">João da Silva — visualização completa</div>
+        <div class="page-sub">Visualização completa</div>
       </div>
       <button class="btn btn-outline" onclick="showPage('pacientes')">← Voltar</button>
     </div>
     <div class="two-col">
       <div class="patient-card">
         <div class="patient-header">
-          <div class="patient-avatar">JS</div>
-          <div class="patient-name">João da Silva</div>
+          <div class="patient-avatar">--</div>
+          <div class="patient-name">Carregando...</div>
         </div>
         <div class="patient-body">
-          <div class="info-row"><span class="info-key">CPF</span><span class="info-val td-mono">111.222.333-01</span></div>
-          <div class="info-row"><span class="info-key">Alergias</span><span class="info-val"><span class="allergy-tag">⚠ Penicilina</span></span></div>
+          <div class="info-row"><span class="info-key">CPF</span><span class="info-val td-mono">--</span></div>
+          <div class="info-row"><span class="info-key">Alergias</span><span class="info-val">--</span></div>
         </div>
       </div>
       <div>
@@ -330,8 +348,128 @@
       <div class="card-body">
         <div class="form-grid">
           <div class="form-group"><label>Nome Completo</label><input id="p-nome"/></div>
-          <div class="form-group"><label>E-mail</label><input id="p-email"/></div>
+          <div class="form-group"><label>E-mail</label><input id="p-email" disabled/></div>
+          <div class="form-group"><label>CRM</label><input id="p-crm" disabled/></div>
+          <div class="form-group"><label>Especialidade</label><input id="p-esp" disabled/></div>
         </div>
+        <div class="flex-end" style="margin-top:20px;">
+          <button class="btn btn-primary" onclick="editarPerfil()">Salvar Alterações</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="page-usuarios" class="page">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Gerenciar Usuários</div>
+        <div class="page-sub">Crie, edite ou remova usuários do sistema</div>
+      </div>
+      <button class="btn btn-primary" onclick="showPage('novo_usuario')">+ Novo Usuário</button>
+    </div>
+    <div class="card">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Email</th>
+            <th>Tipo</th>
+            <th>Status</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="tabela-usuarios">
+          <tr><td colspan="5" style="text-align: center;">Carregando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="page-novo_usuario" class="page">
+    <div class="page-header"><div class="page-title">Novo Usuário</div></div>
+    <div class="card">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Nome Completo *</label>
+          <input type="text" id="nu-nome" placeholder="João Silva">
+        </div>
+        <div class="form-group">
+          <label>E-mail *</label>
+          <input type="email" id="nu-email" placeholder="joao@medsystem.com">
+        </div>
+        <div class="form-group">
+          <label>Tipo de Usuário *</label>
+          <select id="nu-tipo">
+            <option value="recepcao">Recepção</option>
+            <option value="medico">Médico</option>
+            <option value="admin">Administrador</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Senha *</label>
+          <input type="password" id="nu-senha" placeholder="Senha segura">
+          <div id="nu-senha-force"></div>
+        </div>
+      </div>
+      <div class="flex-end" style="margin-top: 20px; gap: 10px;">
+        <button class="btn btn-outline" onclick="limparForm()">Cancelar</button>
+        <button class="btn btn-primary" onclick="novoUsuario()">Criar Usuário</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="page-medicos" class="page">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Gerenciar Médicos</div>
+        <div class="page-sub">Cadastre e gerencie médicos do sistema</div>
+      </div>
+      <button class="btn btn-primary" onclick="prepararNovoMedico()">+ Novo Médico</button>
+    </div>
+    <div class="card">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>CRM</th>
+            <th>Especialidade</th>
+            <th>Status</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="tabela-medicos">
+          <tr><td colspan="5" style="text-align: center;">Carregando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="page-novo_medico" class="page">
+    <div class="page-header"><div class="page-title">Novo Médico</div></div>
+    <div class="card">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Nome Completo *</label>
+          <input type="text" id="nm-nome" placeholder="Dr. João Silva">
+        </div>
+        <div class="form-group">
+          <label>E-mail *</label>
+          <input type="email" id="nm-email" placeholder="joao@medsystem.com">
+        </div>
+        <div class="form-group">
+          <label>CRM *</label>
+          <input type="text" id="nm-crm" placeholder="123456" onkeyup="aplicarMascaraCRM(this)">
+        </div>
+        <div class="form-group">
+          <label>Especialidade *</label>
+          <select id="nm-especialidade">
+            <option value="">Carregando...</option>
+          </select>
+        </div>
+      </div>
+      <div class="flex-end" style="margin-top: 20px; gap: 10px;">
+        <button class="btn btn-outline" onclick="showPage('medicos')">Cancelar</button>
+        <button class="btn btn-primary" onclick="novoMedico()">Cadastrar Médico</button>
       </div>
     </div>
   </div>
@@ -340,6 +478,8 @@
 </div>
 
 <div class="toast-area" id="toastArea"></div>
+<script src="{{ url_for('static', filename='v10/validacoes.js') }}"></script>
+<script src="{{ url_for('static', filename='v10/admin.js') }}"></script>
 <script src="{{ url_for('static', filename='v10/script.js') }}"></script>
 </body>
 </html>

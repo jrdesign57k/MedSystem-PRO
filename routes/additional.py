@@ -1,15 +1,14 @@
 """
-MedSystem Additional Routes - Exames, Médicos e Dashboard
+MedSystem Additional Routes - Exames e Dashboard
 """
 
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
-from models import Exame, TipoExame, Medico, Consulta, Paciente, LogAuditoria
+from models import Exame, TipoExame, Consulta, Paciente, LogAuditoria, Diagnostico
 from datetime import datetime, timedelta
 
 exames_bp = Blueprint('exames', __name__)
-medicos_bp = Blueprint('medicos', __name__)
 dashboard_bp = Blueprint('dashboard', __name__)
 
 # ════════════════════════════════════════════════════════════
@@ -156,58 +155,6 @@ def registrar_resultado_exame(id):
         }), 500
 
 # ════════════════════════════════════════════════════════════
-# MÉDICOS
-# ════════════════════════════════════════════════════════════
-
-@medicos_bp.route('', methods=['GET'])
-@jwt_required()
-def listar_medicos():
-    """Lista todos os médicos ativos"""
-    try:
-        medicos = Medico.query.all()  # No seu model Medico não tem campo ativo, ele herda do usuario
-        
-        medicos_ativos = []
-        for m in medicos:
-            if m.usuario and m.usuario.ativo:
-                medicos_ativos.append(m.to_dict())
-                
-        return jsonify({
-            'sucesso': True,
-            'total': len(medicos_ativos),
-            'dados': medicos_ativos
-        }), 200
-        
-    except Exception as e:
-        return jsonify({
-            'sucesso': False,
-            'mensagem': f'Erro: {str(e)}'
-        }), 500
-
-@medicos_bp.route('/<int:id>', methods=['GET'])
-@jwt_required()
-def buscar_medico(id):
-    """Busca um médico específico"""
-    try:
-        medico = Medico.query.get(id)
-        
-        if not medico or not medico.usuario.ativo:
-            return jsonify({
-                'sucesso': False,
-                'mensagem': 'Médico não encontrado ou inativo'
-            }), 404
-        
-        return jsonify({
-            'sucesso': True,
-            'dados': medico.to_dict()
-        }), 200
-        
-    except Exception as e:
-        return jsonify({
-            'sucesso': False,
-            'mensagem': f'Erro: {str(e)}'
-        }), 500
-
-# ════════════════════════════════════════════════════════════
 # DASHBOARD
 # ════════════════════════════════════════════════════════════
 
@@ -260,8 +207,6 @@ def obter_estatisticas():
 def obter_alertas():
     """Retorna alertas clínicos (diagnósticos graves)"""
     try:
-        from models import Diagnostico
-        
         # Diagnósticos graves/críticos
         diagnosticos_graves = Diagnostico.query.filter(
             Diagnostico.gravidade.in_(['GRAVE', 'CRITICA'])
@@ -302,16 +247,27 @@ def obter_alertas():
 def proximas_consultas():
     """Retorna próximas consultas agendadas"""
     try:
-        hoje = datetime.now()
+        hoje = datetime.now().date()
         proximas = Consulta.query.filter(
-            Consulta.data_consulta >= hoje,
-            Consulta.status.in_(['AGENDADA', 'EM_ANDAMENTO'])
-        ).order_by(Consulta.data_consulta).limit(10).all()
+            Consulta.data_consulta >= datetime(hoje.year, hoje.month, hoje.day),
+            Consulta.data_consulta <= datetime(hoje.year, hoje.month, hoje.day) + timedelta(days=30)
+        ).order_by(Consulta.data_consulta).all()
+        
+        consultas_list = []
+        for c in proximas:
+            consultas_list.append({
+                'id': c.id,
+                'paciente': c.paciente.nome if c.paciente else 'N/A',
+                'medico': c.medico.usuario.nome if c.medico and c.medico.usuario else 'N/A',
+                'data': c.data_consulta.isoformat() if c.data_consulta else None,
+                'motivo': c.motivo or 'Consulta',
+                'status': c.status or 'Agendada'
+            })
         
         return jsonify({
             'sucesso': True,
-            'total': len(proximas),
-            'dados': [c.to_dict() for c in proximas]
+            'total': len(consultas_list),
+            'dados': consultas_list
         }), 200
         
     except Exception as e:

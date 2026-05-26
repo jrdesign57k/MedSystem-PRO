@@ -5,7 +5,6 @@ MedSystem Consultas Routes - Fluxo completo de consultas
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
-# CORREÇÃO 1: Adicionado os modelos que faltavam na importação
 from models import Consulta, Paciente, Medico, Exame, LogAuditoria, SinalVital, Diagnostico, Prescricao
 from datetime import datetime
 
@@ -13,7 +12,7 @@ consultas_bp = Blueprint('consultas', __name__)
 
 # ════════════════════════════════════════════════════════════
 # GET /api/consultas
-# Listar todas as consultas
+# Listar todas as consultas (COM PAGINAÇÃO PARA O FRONTEND)
 # ════════════════════════════════════════════════════════════
 @consultas_bp.route('', methods=['GET'])
 @jwt_required()
@@ -101,7 +100,7 @@ def consultas_paciente(id_paciente):
 
 # ════════════════════════════════════════════════════════════
 # POST /api/consultas
-# Agendar nova consulta (INSERT + COMMIT)
+# Agendar nova consulta 
 # ════════════════════════════════════════════════════════════
 @consultas_bp.route('', methods=['POST'])
 @jwt_required()
@@ -124,7 +123,6 @@ def agendar_consulta():
                 'mensagem': 'Paciente não encontrado ou inativo'
             }), 404
         
-        # CORREÇÃO 2: Verificação do status ativo alterada para o relacionamento usuario.ativo
         if not medico or not medico.usuario.ativo:
             return jsonify({
                 'sucesso': False,
@@ -143,7 +141,7 @@ def agendar_consulta():
             db.session.add(consulta)
             db.session.flush()  # Gera o ID antes do commit definitivo
             
-            # CORREÇÃO 3: Atualizado de consulta.id para consulta.id_consulta
+            # Grava no log de auditoria usando a chave certa: id_consulta
             log = LogAuditoria(
                 tabela='consulta',
                 operacao='INSERT',
@@ -189,7 +187,6 @@ def registrar_sinais_vitais(id):
         
         # START TRANSACTION
         try:
-            # CORREÇÃO 4: Adaptação dos campos recebidos para o formato estruturado do models.py (Calculando IMC)
             peso = dados.get('peso_kg')
             altura_cm = dados.get('altura_cm')
             imc_calculado = None
@@ -263,7 +260,6 @@ def finalizar_consulta(id):
             # Registrar diagnóstico
             if 'diagnostico' in dados:
                 diag_dados = dados['diagnostico']
-                # CORREÇÃO 5: Alterado 'cid10' para 'cid' para corresponder ao models.py
                 diagnostico = Diagnostico(
                     id_consulta=id,
                     cid=diag_dados.get('cid10'), 
@@ -275,7 +271,6 @@ def finalizar_consulta(id):
             # Registrar prescrições
             if 'prescricoes' in dados:
                 for presc_dados in dados['prescricoes']:
-                    # CORREÇÃO 6: Concatenação estruturada dos campos extras para a coluna única 'posologia' do models.py
                     posologia_completa = f"Dosagem: {presc_dados.get('dosagem', '')} | Freq: {presc_dados.get('frequencia', '')} | Duracao: {presc_dados.get('duracao', '')}"
                     if presc_dados.get('instrucoes'):
                         posologia_completa += f" | Obs: {presc_dados.get('instrucoes')}"

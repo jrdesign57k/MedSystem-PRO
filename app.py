@@ -7,8 +7,10 @@ from extensions import db, jwt, bcrypt
 import os
 from dotenv import load_dotenv
 
-# Carrega as variáveis do arquivo .env
-load_dotenv()
+
+# Carrega as variáveis do arquivo .env a partir do diretório do módulo
+dotenv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
+load_dotenv(dotenv_path=dotenv_path)
 
 def create_app():
     app = Flask(__name__, 
@@ -41,7 +43,8 @@ def create_app():
         from routes.auth import auth_bp
         from routes.pacientes import pacientes_bp
         from routes.consultas import consultas_bp
-        from routes.additional import exames_bp, medicos_bp, dashboard_bp
+        from routes.additional import exames_bp, dashboard_bp
+        from routes.medicos import medicos_bp
 
         # Registro das rotas
         app.register_blueprint(auth_bp, url_prefix='/api/auth')
@@ -55,25 +58,48 @@ def create_app():
         try:
             db.create_all()
             
-            # Verifica se o usuário padrão existe
-            medico = Usuario.query.filter_by(email='medico@medsystem.com').first()
+            # Verifica se o usuário ADMIN (Principal) existe
+            admin = Usuario.query.filter_by(email='medico@medsystem.com').first()
+            if not admin:
+                admin_user = Usuario(
+                    nome="Administrador Principal",
+                    email="medico@medsystem.com",
+                    tipo="admin",
+                    ativo=True
+                )
+                admin_user.set_senha("MedSystem12#")
+                db.session.add(admin_user)
+                db.session.flush()
+            
+            # Verifica se o usuário de teste (médico comum) existe
+            medico = Usuario.query.filter_by(email='drcarlos@medsystem.com').first()
             if not medico:
                 user = Usuario(
                     nome="Dr. Carlos Mendonça",
-                    email="medico@medsystem.com",
+                    email="drcarlos@medsystem.com",
                     tipo="medico",
                     ativo=True
                 )
-                user.set_senha("123456")
+                user.set_senha("MedSystem12#")
                 db.session.add(user)
+                db.session.flush()
+                print("\n" + "="*50)
+                print("✓ USUÁRIO MÉDICO CRIADO: drcarlos@medsystem.com")
+                print("✓ SENHA DEFINIDA: MedSystem12#")
+                print("="*50 + "\n")
+            
+            if admin or medico:
+                db.session.commit()
+                print("\n✓ Sistema pronto.")
+                print("  Admin Principal: medico@medsystem.com / MedSystem12#")
+                print("  Médico Exemplo: drcarlos@medsystem.com / MedSystem12#\n")
+            else:
                 db.session.commit()
                 print("\n" + "="*50)
-                print("✓ BANCO DE DADOS MYSQL INICIALIZADO")
-                print("✓ USUÁRIO CRIADO: medico@medsystem.com")
-                print("✓ SENHA DEFINIDA: 123456")
+                print("✓ BANCO INICIALIZADO COM SUCESSO")
+                print("✓ ADMIN PRINCIPAL CRIADO: medico@medsystem.com")
+                print("✓ SENHA: MedSystem12#")
                 print("="*50 + "\n")
-            else:
-                print("\n✓ Sistema pronto. Login: medico@medsystem.com\n")
                 
         except Exception as e:
             # Se erro de tabela, tenta fazer DROP ALL e recriar
@@ -85,21 +111,32 @@ def create_app():
                     db.drop_all()
                     db.create_all()
                     
-                    # Criar usuário padrão
+                    # Criar usuário admin principal
+                    admin_user = Usuario(
+                        nome="Administrador Principal",
+                        email="medico@medsystem.com",
+                        tipo="admin",
+                        ativo=True
+                    )
+                    admin_user.set_senha("MedSystem12#")
+                    db.session.add(admin_user)
+                    
+                    # Criar usuário médico de teste
                     user = Usuario(
                         nome="Dr. Carlos Mendonça",
-                        email="medico@medsystem.com",
+                        email="drcarlos@medsystem.com",
                         tipo="medico",
                         ativo=True
                     )
-                    user.set_senha("123456")
+                    user.set_senha("MedSystem12#")
                     db.session.add(user)
                     db.session.commit()
                     
                     print("="*50)
                     print("✓ BANCO RECRIADO COM SUCESSO")
-                    print("✓ USUÁRIO CRIADO: medico@medsystem.com")
-                    print("✓ SENHA DEFINIDA: 123456")
+                    print("✓ ADMIN PRINCIPAL: medico@medsystem.com")
+                    print("✓ MÉDICO TESTE: drcarlos@medsystem.com")
+                    print("✓ SENHA: MedSystem12#")
                     print("="*50 + "\n")
                 except Exception as e2:
                     print(f"\n✗ Erro ao recriar: {e2}\n")

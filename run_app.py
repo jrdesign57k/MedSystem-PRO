@@ -24,7 +24,7 @@ missing = []
 
 for package in required_packages:
     try:
-        __import__(package.replace('_', '-').replace('flask-', ''))
+        __import__(package)
         print(f"  ✓ {package}")
     except ImportError:
         print(f"  ✗ {package} - NÃO INSTALADO")

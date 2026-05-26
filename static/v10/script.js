@@ -62,10 +62,21 @@ function loginSuccess(user) {
   const sbAvatar = document.getElementById('sidebar-avatar');
   const sbName = document.getElementById('sidebar-name');
   const sbRole = document.getElementById('sidebar-role');
+  const pCrmInput = document.getElementById('p-crm');
+  const pEspInput = document.getElementById('p-esp');
+  
+  if (pCrmInput) pCrmInput.value = user.medico ? user.medico.crm : 'N/A';
+  if (pEspInput) pEspInput.value = user.medico && user.medico.especialidade ? user.medico.especialidade.nome : 'N/A';
   
   if (sbAvatar) sbAvatar.textContent = user.iniciais || user.nome.substring(0, 2).toUpperCase();
   if (sbName) sbName.textContent = user.nome;
   if (sbRole) sbRole.textContent = user.tipo || 'Usuário';
+
+  // MOSTRAR/ESCONDER menu de admin baseado no role
+  const navAdmin = document.getElementById('nav-admin');
+  if (navAdmin) {
+    navAdmin.style.display = user.tipo === 'admin' ? 'block' : 'none';
+  }
 
   // Atualiza perfil (apenas se os elementos existirem)
   const pfAvatar = document.getElementById('perfil-avatar-lg');
@@ -102,6 +113,19 @@ function loginSuccess(user) {
   carregarDashboard();
   carregarPacientes();
   carregarDadosParaAgendamento();
+  carregarConsultas(); // Adicionado para carregar a lista de consultas
+  
+  // Carrega dados de admin se for admin
+  if (user.tipo === 'admin') {
+    carregarUsuarios();
+    carregarEspecialidades();
+    
+    // Inicializar indicador de força de senha no formulário de novo usuário
+    const inputSenha = document.getElementById('nu-senha');
+    if (inputSenha) {
+      exibirIndicadorForcaSenha(inputSenha, 'nu-senha-force');
+    }
+  }
 }
 
 
@@ -124,6 +148,68 @@ function doLogout() {
 }
 
 // ══════════════════════════════════════
+
+
+async function novoMedico() {
+  const nome = document.getElementById('nm-nome').value.trim();
+  const email = document.getElementById('nm-email').value.trim();
+  const crm = document.getElementById('nm-crm').value.trim();
+  const id_especialidade = document.getElementById('nm-especialidade').value;
+
+  if (!nome || !email || !crm || !id_especialidade) {
+    showToast('Preencha todos os campos', 'error');
+    return;
+  }
+
+  try {
+    const token = localStorage.getItem('token');
+    const res = await fetch('/api/medicos', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
+      },
+      body: JSON.stringify({
+        nome,
+        email,
+        crm,
+        id_especialidade: parseInt(id_especialidade),
+        senha: '123456' // Senha padrão
+      })
+    });
+
+    const json = await res.json();
+
+    if (json.sucesso) {
+      showToast('✅ Médico cadastrado com sucesso!', 'success');
+      
+      // Limpa os campos do formulário
+      document.getElementById('nm-nome').value = '';
+      document.getElementById('nm-email').value = '';
+      document.getElementById('nm-crm').value = '';
+      document.getElementById('nm-especialidade').value = '';
+      
+      // Atualiza a tabela na tela de gestão de médicos
+      carregarMedicos(); 
+      
+      // Atualiza a lista suspensa na tela de Agendar Consulta!
+      if (typeof carregarDadosParaAgendamento === 'function') {
+        carregarDadosParaAgendamento();
+      }
+
+      showPage('medicos');
+    } else {
+      showToast('❌ ' + json.mensagem, 'error');
+    }
+  } catch (erro) {
+    console.error('Erro:', erro);
+    showToast('Erro ao cadastrar médico', 'error');
+  }
+}
+
+
+
+
 // BUSCAS NA API (GET)
 // ══════════════════════════════════════
 async function carregarDashboard() {
@@ -145,6 +231,23 @@ async function carregarDashboard() {
       if(elCons) elCons.textContent = d.consultas_hoje;
       if(elPacs) elPacs.textContent = d.pacientes_ativos;
       if(elExams) elExams.textContent = d.exames_pendentes;
+
+      // Renderização rápida da tabela do dashboard
+      if (d.ultimas_consultas) {
+        const tbodyDash = document.querySelector('#tabela-dash-consultas tbody');
+        if (tbodyDash) {
+          tbodyDash.innerHTML = '';
+          d.ultimas_consultas.forEach(c => {
+            tbodyDash.innerHTML += `
+              <tr>
+                <td class="td-name">${c.paciente_nome}</td>
+                <td class="td-mono">${new Date(c.data).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}</td>
+                <td><span class="badge badge-blue">${c.status}</span></td>
+              </tr>
+            `;
+          });
+        }
+      }
     }
   } catch (erro) {
     console.error('Erro no dashboard:', erro);
@@ -177,7 +280,7 @@ async function carregarPacientes() {
           <td>${paciente.cpf}</td>
           <td>${dataFmt}</td>
           <td>${paciente.telefone || '—'}</td>
-          <td><button class="btn btn-outline" onclick="showToast('Abrindo prontuário...', '')">Visualizar</button></td>
+          <td><button class="btn btn-outline" onclick="abrirProntuario(${paciente.id})">Visualizar</button></td>
         `;
         tbody.appendChild(tr);
       });
@@ -216,7 +319,11 @@ async function carregarDadosParaAgendamento() {
       if (selectMed) {
         selectMed.innerHTML = '<option value="">Selecione um Médico...</option>';
         jsonMedicos.dados.forEach(m => {
-          selectMed.innerHTML += `<option value="${m.id}">Dr(a). ${m.usuario.nome} (${m.especialidade.nome})</option>`;
+          // Correção aqui: tenta m.nome primeiro, se não existir tenta m.usuario.nome
+          const nomeMedico = m.nome || (m.usuario ? m.usuario.nome : 'Médico');
+          const espNome = m.especialidade ? (m.especialidade.nome || m.especialidade) : 'N/A';
+          
+          selectMed.innerHTML += `<option value="${m.id}">Dr(a). ${nomeMedico} (${espNome})</option>`;
         });
       }
     }
@@ -228,20 +335,46 @@ async function carregarDadosParaAgendamento() {
 // ══════════════════════════════════════
 // NOVO PACIENTE (POST)
 // ══════════════════════════════════════
-// ══════════════════════════════════════
-// NOVO PACIENTE (POST) - VERSÃO CORRIGIDA
-// ══════════════════════════════════════
 async function cadastrarPaciente() {
   const nome = document.getElementById('np-nome').value.trim();
   let cpf   = document.getElementById('np-cpf').value.trim();
-  const nasc = document.getElementById('np-nasc').value; // Formato padrão: YYYY-MM-DD
-  
+  const nasc = document.getElementById('np-nasc').value;
   const tel  = document.getElementById('np-tel') ? document.getElementById('np-tel').value.trim() : '';
   const email = document.getElementById('np-email') ? document.getElementById('np-email').value.trim() : '';
 
   // Validação básica no front
   if (!nome || !cpf || !nasc) {
-    showToast('Preencha os campos obrigatórios (*)', 'error'); 
+    showToast('❌ Preencha os campos obrigatórios (*)' , 'error'); 
+    return;
+  }
+
+  // Validação de CPF
+  if (!validarCPF(cpf)) {
+    showToast('❌ CPF inválido. Verifique os números.', 'error');
+    document.getElementById('np-cpf').focus();
+    return;
+  }
+
+  // Validação de data de nascimento
+  const idade = validarDataNascimento(nasc);
+  if (idade < 0) {
+    showToast('❌ Data de nascimento não pode ser no futuro.', 'error');
+    return;
+  }
+  if (idade > 150) {
+    showToast('❌ Data de nascimento inválida.', 'error');
+    return;
+  }
+
+  // Validação de email se preenchido
+  if (email && !validarEmail(email)) {
+    showToast('❌ Email inválido.', 'error');
+    return;
+  }
+
+  // Validação de telefone se preenchido
+  if (tel && !validarTelefone(tel)) {
+    showToast('❌ Telefone deve ter entre 10 e 11 dígitos.', 'error');
     return;
   }
 
@@ -256,42 +389,48 @@ async function cadastrarPaciente() {
       },
       body: JSON.stringify({ 
         nome: nome, 
-        cpf: cpf.replace(/\D/g, ''), // Remove pontos e traços do CPF para não quebrar o banco
-        data_nascimento: nasc, // Mantém YYYY-MM-DD
-        telefone: tel.replace(/\D/g, ''), // Remove parênteses e espaços do telefone
+        cpf: cpf.replace(/\D/g, ''),
+        data_nascimento: nasc,
+        telefone: tel.replace(/\D/g, ''),
         email: email,
-        sexo: 'M',
+        sexo: document.getElementById('np-sexo').value || 'M',
         ativo: true
       })
     });
 
-    // ... (código do fetch continua igual)
     const dados = await res.json();
     
-    if (res.ok) {
-      // 1. Mostra o sucesso
-      showToast('Paciente cadastrado com sucesso!', 'success');
+    if (res.ok && dados.sucesso) {
+      showToast('✅ Paciente cadastrado com sucesso!', 'success');
       
-      // 2. Limpa os campos da tela de forma segura (ignorando se algum não existir)
+      // Limpa os campos
       document.getElementById('np-nome').value = '';
       document.getElementById('np-cpf').value = '';
       document.getElementById('np-nasc').value = '';
       document.getElementById('np-sexo').value = 'M';
       if (document.getElementById('np-tel')) document.getElementById('np-tel').value = '';
+      if (document.getElementById('np-email')) document.getElementById('np-email').value = '';
       
-      // 3. Atualiza a lista de pacientes no background e muda a tela
+      // Atualiza a tabela E AS CAIXINHAS DE AGENDAMENTO
       if (typeof carregarPacientes === 'function') {
         carregarPacientes();
       }
-      showPage('pacientes'); // Volta para a tabela
+      if (typeof carregarDadosParaAgendamento === 'function') {
+        carregarDadosParaAgendamento();
+      }
       
+      showPage('pacientes');
+      
+    } else if (res.status === 409) {
+      showToast('❌ CPF já cadastrado no sistema.', 'error');
+    } else if (res.status === 403) {
+      showToast('❌ Você não tem permissão para fazer isso.', 'error');
     } else {
-      showToast('Erro: ' + (dados.mensagem || 'Falha ao cadastrar'), 'error');
+      showToast('❌ Erro: ' + (dados.mensagem || 'Falha ao cadastrar'), 'error');
     }
   } catch (erro) {
-    // Se der erro, printa no F12 para sabermos exatamente a linha que quebrou!
     console.error("Erro interno no JavaScript:", erro);
-    showToast('Erro de processamento na tela.', 'error');
+    showToast('❌ Erro de conexão com o servidor.', 'error');
   }
 }
 
@@ -343,6 +482,7 @@ async function agendarConsulta() {
       showToast('Consulta agendada com sucesso!', 'success');
       limparFormConsulta();
       carregarDashboard(); // Atualiza contador de consultas no painel
+      carregarConsultas(); // Atualiza a lista na aba de consultas
     } else {
       showToast('Erro: ' + (dados.mensagem || 'Falha ao agendar'), 'error');
     }
@@ -416,7 +556,7 @@ function filtrarConsultas(val) {
 }
 
 // ══════════════════════════════════════
-// PERFIL
+// PERFIL E FUNÇÕES AUXILIARES DE GET
 // ══════════════════════════════════════
 function salvarPerfil() {
   const nome = document.getElementById('p-nome').value.trim();
@@ -426,6 +566,10 @@ function salvarPerfil() {
   showToast('Perfil atualizado com sucesso!', 'success');
 }
 
+function editarPerfil() {
+  showToast('Em desenvolvimento.', 'success');
+}
+
 function alterarSenha() {
   const atual = document.getElementById('p-senha-atual').value;
   const nova  = document.getElementById('p-senha-nova').value;
@@ -433,9 +577,58 @@ function alterarSenha() {
   if (!atual || !nova || !conf) { showToast('Preencha todos os campos de senha.', 'error'); return; }
   if (nova !== conf) { showToast('A nova senha e a confirmação não coincidem.', 'error'); return; }
   if (nova.length < 6) { showToast('A nova senha deve ter pelo menos 6 caracteres.', 'error'); return; }
-  // Integração com rota de alterar senha deve ser feita aqui (opcional no momento)
+  
   document.getElementById('p-senha-atual').value = '';
   document.getElementById('p-senha-nova').value = '';
   document.getElementById('p-senha-conf').value = '';
   showToast('Senha alterada com sucesso!', 'success');
 }
+
+async function carregarConsultas() {
+  try {
+    const token = localStorage.getItem('token');
+    const res = await fetch('/api/consultas', { headers: { 'Authorization': 'Bearer ' + token } });
+    const json = await res.json();
+
+    if (json.sucesso) {
+      const tbody = document.querySelector('#tabela-consultas tbody');
+      if (!tbody) return;
+      tbody.innerHTML = ''; 
+
+      json.dados.forEach(c => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="td-name">${c.paciente.nome}</td>
+          <td class="td-mono">${new Date(c.data_consulta).toLocaleString('pt-BR')}</td>
+          <td>${c.medico.nome}</td>
+          <td>${c.motivo}</td>
+          <td><span class="badge badge-amber">${c.status || 'Agendada'}</span></td>
+          <td><button class="btn btn-outline" onclick="abrirProntuario(${c.paciente.id})">Abrir</button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+  } catch (erro) { console.error('Erro ao buscar consultas:', erro); }
+}
+
+async function abrirProntuario(idPaciente) {
+  showPage('prontuario');
+  try {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`/api/pacientes/${idPaciente}`, { headers: { 'Authorization': 'Bearer ' + token } });
+    const json = await res.json();
+
+    if (json.sucesso) {
+      const p = json.dados;
+      document.querySelector('.patient-name').textContent = p.nome;
+      document.querySelector('.patient-avatar').textContent = p.nome.substring(0,2).toUpperCase();
+      
+      const infoVals = document.querySelectorAll('#page-prontuario .info-val');
+      if(infoVals.length >= 2) {
+        infoVals[0].textContent = p.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+        infoVals[1].innerHTML = p.alergias ? `<span class="allergy-tag">⚠ ${p.alergias}</span>` : 'Nenhuma';
+      }
+    }
+  } catch (erro) { showToast('Erro ao carregar prontuário', 'error'); }
+}
+

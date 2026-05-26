@@ -372,6 +372,20 @@ textarea { resize:vertical; min-height:72px; }
 ::-webkit-scrollbar-track { background:transparent; }
 ::-webkit-scrollbar-thumb { background:var(--border2); border-radius:8px; }
 
+/* BADGES */
+.badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  margin: 0 2px;
+}
+
+.badge-admin { background: var(--red-bg); color: var(--red); }
+.badge-medico { background: var(--blue-bg); color: var(--blue); }
+.badge-recepcao { background: var(--amber-bg); color: var(--amber); }
+
 @media(max-width:1100px) {
   .login-left { display:none; }
   .login-right { width:100%; }
@@ -380,4 +394,155 @@ textarea { resize:vertical; min-height:72px; }
   .stats-grid { grid-template-columns:1fr 1fr; }
   .two-col, .three-col { grid-template-columns:1fr; }
   .vitals-grid { grid-template-columns:1fr 1fr; }
+}
+
+/* ═══════════════════════════════════════
+   RESPONSIVIDADE COMPLETA MOBILE
+═══════════════════════════════════════ */
+
+@media (max-width: 768px) {
+  :root { font-size: 13px; }
+  
+  .app-wrapper { display: flex; flex-direction: column-reverse; }
+  
+  .sidebar { 
+    position: fixed;
+    left: -100%;
+    top: 0;
+    width: 80vw;
+    max-width: 300px;
+    height: 100vh;
+    z-index: 1000;
+    transition: left 0.3s ease;
+    background: var(--surface);
+    overflow-y: auto;
+  }
+  
+  .sidebar.open { left: 0; }
+  
+  .main { 
+    flex: 1;
+    padding: 16px 12px;
+    margin-left: 0;
+  }
+  
+  .page-header { flex-direction: column; gap: 12px; }
+  .page-header > button { width: 100%; }
+  .page-title { font-size: 20px; }
+  
+  .form-grid { grid-template-columns: 1fr !important; gap: 12px; }
+  .form-group input, .form-group select, .form-group textarea { font-size: 16px; padding: 10px; }
+  
+  .stats-grid { grid-template-columns: 1fr; gap: 12px; }
+  .stat-card { padding: 12px; }
+  .stat-value { font-size: 24px; }
+  
+  .card { padding: 14px; margin-bottom: 12px; }
+  
+  .btn { padding: 10px 12px; font-size: 13px; }
+  .btn-sm { padding: 6px 10px; font-size: 11px; }
+  
+  .table { font-size: 12px; }
+  .table th, .table td { padding: 8px 6px; }
+  
+  .toast-area { bottom: 12px; right: 12px; left: 12px; }
+  .toast { width: 100%; min-width: auto; }
+  
+  .flex-end { flex-direction: column; gap: 8px; }
+  .flex-end button { width: 100%; }
+  
+  .login-card { padding: 20px 16px; }
+  .login-hint { font-size: 11px; padding: 10px; }
+  
+  .nav-item { padding: 10px 12px; gap: 12px; font-size: 13px; }
+  .nav-item svg { width: 18px; height: 18px; }
+  
+  .logo-text { font-size: 16px; }
+  .logo-sub { font-size: 11px; }
+  
+  .user-chip { gap: 8px; }
+  .avatar { width: 36px; height: 36px; font-size: 11px; }
+  
+  .page-sub { font-size: 12px; }
+  
+  .two-col { grid-template-columns: 1fr; }
+  .three-col { grid-template-columns: 1fr; }
+  
+  /* MODAL */
+  [data-modal-bg] { z-index: 998 !important; }
+  [data-modal-bg] + div { z-index: 999 !important; }
+}
+
+@media (max-width: 480px) {
+  body { font-size: 12px; }
+  
+  .login-screen { min-height: auto; }
+  .login-left { display: none !important; }
+  .login-right { width: 100%; padding: 16px; }
+  .login-card { padding: 16px; border-radius: 16px 16px 0 0; margin-top: auto; }
+  .login-card-title { font-size: 16px; }
+  .login-field input { font-size: 16px; padding: 11px; }
+  .login-btn { padding: 11px; font-size: 13px; width: 100%; }
+  .login-hint { font-size: 11px; padding: 8px; }
+  
+  .main { padding: 12px; }
+  .page-title { font-size: 18px; }
+  .page-sub { font-size: 11px; }
+  
+  .form-group { margin-bottom: 12px; }
+  .form-group label { font-size: 11px; }
+  .form-group input, .form-group select, .form-group textarea { font-size: 14px; padding: 9px; }
+  
+  .card { padding: 12px; margin-bottom: 10px; }
+  .card-header { padding: 10px 12px; }
+  
+  .stats-grid { grid-template-columns: 1fr; gap: 10px; }
+  .stat-card { padding: 12px; }
+  .stat-value { font-size: 20px; }
+  .stat-label { font-size: 11px; }
+  
+  .table {
+    font-size: 11px;
+    display: block;
+    overflow-x: auto;
+  }
+  
+  .table thead { display: none; }
+  .table tbody { display: block; }
+  .table tr { display: block; margin-bottom: 10px; border: 1px solid var(--border); border-radius: 6px; padding: 10px; }
+  .table td { display: block; padding: 6px 0; border: none; }
+  .table td:first-child { padding-top: 0; }
+  
+  .btn { width: 100%; padding: 9px; font-size: 13px; }
+  .btn-sm { padding: 6px 8px; font-size: 11px; width: auto; display: inline-block; }
+  
+  .page-header { flex-direction: column; gap: 10px; }
+  .page-header > button { width: 100%; }
+  
+  .nav-item { padding: 9px 10px; font-size: 12px; gap: 10px; }
+  .nav-item svg { width: 16px; height: 16px; }
+  .nav-section { font-size: 11px; padding: 8px 10px; }
+  
+  .sidebar { width: 75vw; }
+  .sidebar-footer { padding: 10px; }
+  
+  .avatar { width: 32px; height: 32px; font-size: 11px; }
+  .logout-btn { width: 30px; height: 30px; padding: 0; }
+  
+  .flex-end { flex-direction: column; }
+  .flex-end button { width: 100%; }
+  
+  .perfil-header { padding: 20px; flex-direction: column; text-align: center; }
+  .perfil-avatar-lg { width: 60px; height: 60px; }
+  .perfil-name { font-size: 18px; }
+  .perfil-role { font-size: 12px; }
+  
+  .agenda-slot { padding: 8px 10px; margin-bottom: 6px; }
+  .slot-time { font-size: 12px; }
+  .slot-avail { font-size: 11px; }
+  
+  .badge { padding: 2px 6px; font-size: 10px; }
+  
+  /* Ocultar elementos grandes em mobile */
+  .hide-mobile { display: none; }
 }
