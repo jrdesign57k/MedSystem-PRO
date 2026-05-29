@@ -29,10 +29,26 @@ def listar_consultas():
         total = query.count()
         consultas = query.order_by(Consulta.data_consulta.desc()).paginate(page=pagina, per_page=10)
         
+        lista_formatada = []
+        for c in consultas.items:
+            dados = c.to_dict()
+            # Injeta os nomes para o Frontend não se perder
+            nome_paciente = c.paciente.nome if c.paciente else 'Desconhecido'
+            nome_medico = c.medico.usuario.nome if (c.medico and c.medico.usuario) else 'Desconhecido'
+            
+            dados['paciente_nome'] = nome_paciente
+            dados['medico_nome'] = nome_medico
+            
+            # Formato aninhado (caso o JS use consulta.paciente.nome)
+            dados['paciente'] = {'nome': nome_paciente}
+            dados['medico'] = {'usuario': {'nome': nome_medico}}
+            
+            lista_formatada.append(dados)
+        
         return jsonify({
             'sucesso': True,
             'total': total,
-            'dados': [c.to_dict() for c in consultas.items]
+            'dados': lista_formatada
         }), 200
         
     except Exception as e:

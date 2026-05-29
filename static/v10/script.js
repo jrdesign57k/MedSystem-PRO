@@ -58,27 +58,26 @@ function doLogin() {
 }
 
 function loginSuccess(user) {
-  // Atualiza sidebar (apenas se os elementos existirem)
   const sbAvatar = document.getElementById('sidebar-avatar');
   const sbName = document.getElementById('sidebar-name');
   const sbRole = document.getElementById('sidebar-role');
+  
+  // ──── CORREÇÃO AQUI: Lendo os dados diretos do primeiro nível mapeado no Flask ────
   const pCrmInput = document.getElementById('p-crm');
   const pEspInput = document.getElementById('p-esp');
   
-  if (pCrmInput) pCrmInput.value = user.medico ? user.medico.crm : 'N/A';
-  if (pEspInput) pEspInput.value = user.medico && user.medico.especialidade ? user.medico.especialidade.nome : 'N/A';
+  if (pCrmInput) pCrmInput.value = user.crm || 'N/A';
+  if (pEspInput) pEspInput.value = user.especialidade || 'N/A';
   
   if (sbAvatar) sbAvatar.textContent = user.iniciais || user.nome.substring(0, 2).toUpperCase();
   if (sbName) sbName.textContent = user.nome;
   if (sbRole) sbRole.textContent = user.tipo || 'Usuário';
 
-  // MOSTRAR/ESCONDER menu de admin baseado no role
   const navAdmin = document.getElementById('nav-admin');
   if (navAdmin) {
     navAdmin.style.display = user.tipo === 'admin' ? 'block' : 'none';
   }
 
-  // Atualiza perfil (apenas se os elementos existirem)
   const pfAvatar = document.getElementById('perfil-avatar-lg');
   const pfNome = document.getElementById('perfil-nome-display');
   const pfRole = document.getElementById('perfil-role-display');
@@ -89,17 +88,18 @@ function loginSuccess(user) {
   if (pfAvatar) pfAvatar.textContent = user.iniciais || user.nome.substring(0, 2).toUpperCase();
   if (pfNome) pfNome.textContent = user.nome;
   if (pfRole) pfRole.textContent = (user.tipo || 'Usuário') + ' • ID ' + user.id;
-  if (pfEsp) pfEsp.textContent = user.email;
+  
+  // Ajustado para mostrar a especialidade em vez do e-mail no subtítulo do perfil se for médico
+  if (pfEsp) pfEsp.textContent = user.tipo === 'medico' ? user.especialidade : user.email;
+  
   if (pNomeInput) pNomeInput.value = user.nome;
   if (pEmailInput) pEmailInput.value = user.email;
 
-  // Elementos de Sessão Opcionais (Evita o travamento se não estiverem no HTML)
   const sessaoEmail = document.getElementById('sessao-email');
   const sessaoHora = document.getElementById('sessao-hora');
   if (sessaoEmail) sessaoEmail.textContent = user.email;
   if (sessaoHora) sessaoHora.textContent = new Date().toLocaleTimeString('pt-BR');
 
-  // Troca de tela de forma segura
   const loginScreen = document.getElementById('login-screen');
   const appScreen = document.getElementById('app-screen');
   
@@ -109,25 +109,22 @@ function loginSuccess(user) {
   showToast('Bem-vindo, ' + user.nome + '! 👋', 'success');
   showPage('dashboard');
 
-  // Carrega os dados reais das APIs do banco MySQL
   carregarDashboard();
   carregarPacientes();
   carregarDadosParaAgendamento();
-  carregarConsultas(); // Adicionado para carregar a lista de consultas
+  carregarConsultas(); 
   
-  // Carrega dados de admin se for admin
   if (user.tipo === 'admin') {
-    carregarUsuarios();
-    carregarEspecialidades();
+    if (typeof carregarUsuarios === 'function') carregarUsuarios();
+    if (typeof carregarMedicos === 'function') carregarMedicos();
+    carregarEspecialidades(); 
     
-    // Inicializar indicador de força de senha no formulário de novo usuário
     const inputSenha = document.getElementById('nu-senha');
-    if (inputSenha) {
+    if (inputSenha && typeof exibirIndicadorForcaSenha === 'function') {
       exibirIndicadorForcaSenha(inputSenha, 'nu-senha-force');
     }
   }
 }
-
 
 function doLogout() {
   currentUser = null;
@@ -148,68 +145,6 @@ function doLogout() {
 }
 
 // ══════════════════════════════════════
-
-
-async function novoMedico() {
-  const nome = document.getElementById('nm-nome').value.trim();
-  const email = document.getElementById('nm-email').value.trim();
-  const crm = document.getElementById('nm-crm').value.trim();
-  const id_especialidade = document.getElementById('nm-especialidade').value;
-
-  if (!nome || !email || !crm || !id_especialidade) {
-    showToast('Preencha todos os campos', 'error');
-    return;
-  }
-
-  try {
-    const token = localStorage.getItem('token');
-    const res = await fetch('/api/medicos', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + token
-      },
-      body: JSON.stringify({
-        nome,
-        email,
-        crm,
-        id_especialidade: parseInt(id_especialidade),
-        senha: '123456' // Senha padrão
-      })
-    });
-
-    const json = await res.json();
-
-    if (json.sucesso) {
-      showToast('✅ Médico cadastrado com sucesso!', 'success');
-      
-      // Limpa os campos do formulário
-      document.getElementById('nm-nome').value = '';
-      document.getElementById('nm-email').value = '';
-      document.getElementById('nm-crm').value = '';
-      document.getElementById('nm-especialidade').value = '';
-      
-      // Atualiza a tabela na tela de gestão de médicos
-      carregarMedicos(); 
-      
-      // Atualiza a lista suspensa na tela de Agendar Consulta!
-      if (typeof carregarDadosParaAgendamento === 'function') {
-        carregarDadosParaAgendamento();
-      }
-
-      showPage('medicos');
-    } else {
-      showToast('❌ ' + json.mensagem, 'error');
-    }
-  } catch (erro) {
-    console.error('Erro:', erro);
-    showToast('Erro ao cadastrar médico', 'error');
-  }
-}
-
-
-
-
 // BUSCAS NA API (GET)
 // ══════════════════════════════════════
 async function carregarDashboard() {
@@ -232,8 +167,7 @@ async function carregarDashboard() {
       if(elPacs) elPacs.textContent = d.pacientes_ativos;
       if(elExams) elExams.textContent = d.exames_pendentes;
 
-      // Renderização rápida da tabela do dashboard
-      if (d.ultimas_consultas) {
+      if (d.ultimas_consultas && d.ultimas_consultas.length > 0) {
         const tbodyDash = document.querySelector('#tabela-dash-consultas tbody');
         if (tbodyDash) {
           tbodyDash.innerHTML = '';
@@ -241,11 +175,16 @@ async function carregarDashboard() {
             tbodyDash.innerHTML += `
               <tr>
                 <td class="td-name">${c.paciente_nome}</td>
-                <td class="td-mono">${new Date(c.data).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}</td>
+                <td class="td-mono">${c.hora}</td>
                 <td><span class="badge badge-blue">${c.status}</span></td>
               </tr>
             `;
           });
+        }
+      } else {
+        const tbodyDash = document.querySelector('#tabela-dash-consultas tbody');
+        if (tbodyDash) {
+          tbodyDash.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #999;">Nenhuma consulta agendada para hoje</td></tr>';
         }
       }
     }
@@ -319,10 +258,8 @@ async function carregarDadosParaAgendamento() {
       if (selectMed) {
         selectMed.innerHTML = '<option value="">Selecione um Médico...</option>';
         jsonMedicos.dados.forEach(m => {
-          // Correção aqui: tenta m.nome primeiro, se não existir tenta m.usuario.nome
           const nomeMedico = m.nome || (m.usuario ? m.usuario.nome : 'Médico');
           const espNome = m.especialidade ? (m.especialidade.nome || m.especialidade) : 'N/A';
-          
           selectMed.innerHTML += `<option value="${m.id}">Dr(a). ${nomeMedico} (${espNome})</option>`;
         });
       }
@@ -339,41 +276,49 @@ async function cadastrarPaciente() {
   const nome = document.getElementById('np-nome').value.trim();
   let cpf   = document.getElementById('np-cpf').value.trim();
   const nasc = document.getElementById('np-nasc').value;
+  const sexo = document.getElementById('np-sexo').value;
   const tel  = document.getElementById('np-tel') ? document.getElementById('np-tel').value.trim() : '';
   const email = document.getElementById('np-email') ? document.getElementById('np-email').value.trim() : '';
+  const sangue = document.getElementById('np-sangue') ? document.getElementById('np-sangue').value : '';
+  const endereco = document.getElementById('np-endereco') ? document.getElementById('np-endereco').value.trim() : '';
+  const alergias = document.getElementById('np-alergias') ? document.getElementById('np-alergias').value.trim() : '';
+  const observacoes = document.getElementById('np-observacoes') ? document.getElementById('np-observacoes').value.trim() : '';
+  
+  // Sinais Vitais (Opcionais)
+  const peso = document.getElementById('np-peso') ? document.getElementById('np-peso').value : '';
+  const altura = document.getElementById('np-altura') ? document.getElementById('np-altura').value : '';
+  const pressao = document.getElementById('np-pressao') ? document.getElementById('np-pressao').value.trim() : '';
+  const fc = document.getElementById('np-fc') ? document.getElementById('np-fc').value : '';
 
-  // Validação básica no front
-  if (!nome || !cpf || !nasc) {
-    showToast('❌ Preencha os campos obrigatórios (*)' , 'error'); 
+  if (!nome || !cpf || !nasc || !sexo) {
+    showToast('❌ Preencha os campos obrigatórios (*)', 'error'); 
     return;
   }
 
-  // Validação de CPF
-  if (!validarCPF(cpf)) {
+  if (typeof validarCPF === 'function' && !validarCPF(cpf)) {
     showToast('❌ CPF inválido. Verifique os números.', 'error');
     document.getElementById('np-cpf').focus();
     return;
   }
 
-  // Validação de data de nascimento
-  const idade = validarDataNascimento(nasc);
-  if (idade < 0) {
-    showToast('❌ Data de nascimento não pode ser no futuro.', 'error');
-    return;
-  }
-  if (idade > 150) {
-    showToast('❌ Data de nascimento inválida.', 'error');
-    return;
+  if (typeof validarDataNascimento === 'function') {
+      const idade = validarDataNascimento(nasc);
+      if (idade < 0) {
+        showToast('❌ Data de nascimento não pode ser no futuro.', 'error');
+        return;
+      }
+      if (idade > 150) {
+        showToast('❌ Data de nascimento inválida.', 'error');
+        return;
+      }
   }
 
-  // Validação de email se preenchido
-  if (email && !validarEmail(email)) {
+  if (email && typeof validarEmail === 'function' && !validarEmail(email)) {
     showToast('❌ Email inválido.', 'error');
     return;
   }
 
-  // Validação de telefone se preenchido
-  if (tel && !validarTelefone(tel)) {
+  if (tel && typeof validarTelefone === 'function' && !validarTelefone(tel)) {
     showToast('❌ Telefone deve ter entre 10 e 11 dígitos.', 'error');
     return;
   }
@@ -391,9 +336,18 @@ async function cadastrarPaciente() {
         nome: nome, 
         cpf: cpf.replace(/\D/g, ''),
         data_nascimento: nasc,
+        sexo: sexo,
         telefone: tel.replace(/\D/g, ''),
         email: email,
-        sexo: document.getElementById('np-sexo').value || 'M',
+        tipo_sanguineo: sangue || null,
+        endereco: endereco || null,
+        alergias: alergias || null,
+        observacoes: observacoes || null,
+        // Sinais Vitais
+        peso: peso ? parseFloat(peso) : null,
+        altura: altura ? parseInt(altura) : null,
+        pressao: pressao || null,
+        frequencia_cardiaca: fc ? parseInt(fc) : null,
         ativo: true
       })
     });
@@ -403,21 +357,24 @@ async function cadastrarPaciente() {
     if (res.ok && dados.sucesso) {
       showToast('✅ Paciente cadastrado com sucesso!', 'success');
       
-      // Limpa os campos
+      // Limpar formulário
       document.getElementById('np-nome').value = '';
       document.getElementById('np-cpf').value = '';
       document.getElementById('np-nasc').value = '';
-      document.getElementById('np-sexo').value = 'M';
+      document.getElementById('np-sexo').value = '';
       if (document.getElementById('np-tel')) document.getElementById('np-tel').value = '';
       if (document.getElementById('np-email')) document.getElementById('np-email').value = '';
+      if (document.getElementById('np-sangue')) document.getElementById('np-sangue').value = '';
+      if (document.getElementById('np-endereco')) document.getElementById('np-endereco').value = '';
+      if (document.getElementById('np-alergias')) document.getElementById('np-alergias').value = '';
+      if (document.getElementById('np-observacoes')) document.getElementById('np-observacoes').value = '';
+      if (document.getElementById('np-peso')) document.getElementById('np-peso').value = '';
+      if (document.getElementById('np-altura')) document.getElementById('np-altura').value = '';
+      if (document.getElementById('np-pressao')) document.getElementById('np-pressao').value = '';
+      if (document.getElementById('np-fc')) document.getElementById('np-fc').value = '';
       
-      // Atualiza a tabela E AS CAIXINHAS DE AGENDAMENTO
-      if (typeof carregarPacientes === 'function') {
-        carregarPacientes();
-      }
-      if (typeof carregarDadosParaAgendamento === 'function') {
-        carregarDadosParaAgendamento();
-      }
+      if (typeof carregarPacientes === 'function') carregarPacientes();
+      if (typeof carregarDadosParaAgendamento === 'function') carregarDadosParaAgendamento();
       
       showPage('pacientes');
       
@@ -449,15 +406,14 @@ async function agendarConsulta() {
   const pacId = document.getElementById('nc-pac').value;
   const medId = document.getElementById('nc-med').value;
   const data = document.getElementById('nc-data').value;
+  const hora = document.getElementById('nc-hora').value;
   const motivo = document.getElementById('nc-motivo').value.trim();
   
-  if (!pacId || !medId || !data || !motivo) {
+  if (!pacId || !medId || !data || !hora || !motivo) {
     showToast('Preencha todos os campos obrigatórios (*)', 'error'); 
     return;
   }
   
-  const hora = slotSelecionado || '00:00';
-  // Backend espera formato ISO (ex: "2025-05-20T14:00:00")
   const dataIso = `${data}T${hora}:00`; 
 
   try {
@@ -472,6 +428,7 @@ async function agendarConsulta() {
         id_paciente: parseInt(pacId),
         id_medico: parseInt(medId),
         data_consulta: dataIso,
+        hora_consulta: hora,
         motivo: motivo
       })
     });
@@ -481,8 +438,8 @@ async function agendarConsulta() {
     if (res.ok && dados.sucesso) {
       showToast('Consulta agendada com sucesso!', 'success');
       limparFormConsulta();
-      carregarDashboard(); // Atualiza contador de consultas no painel
-      carregarConsultas(); // Atualiza a lista na aba de consultas
+      carregarDashboard(); 
+      carregarConsultas(); 
     } else {
       showToast('Erro: ' + (dados.mensagem || 'Falha ao agendar'), 'error');
     }
@@ -496,6 +453,7 @@ function limparFormConsulta() {
   document.getElementById('nc-pac').value = '';
   document.getElementById('nc-med').value = '';
   document.getElementById('nc-data').value = '';
+  document.getElementById('nc-hora').value = '';
   document.getElementById('nc-motivo').value = '';
   const obs = document.getElementById('nc-obs');
   if(obs) obs.value = '';
@@ -521,6 +479,17 @@ function mascaraTel(input) {
   input.value = v;
 }
 
+function mascaraCRM(input) {
+  // Remove tudo que não for número ou letra (permite números e a sigla do estado)
+  let v = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  
+  // Limita o tamanho máximo em 12 caracteres de forma programática
+  if (v.length > 12) {
+    v = v.slice(0, 12);
+  }
+  input.value = v;
+}
+
 function showPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -533,14 +502,16 @@ function showPage(id) {
   window.scrollTo(0, 0);
 }
 
-// DATA ATUAL NA BARRA SUPERIOR
 const d = new Date();
 const dias = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
-document.getElementById('hoje').textContent =
-  dias[d.getDay()] + ', ' + d.toLocaleDateString('pt-BR', {day:'2-digit',month:'long',year:'numeric'});
+const hojeElement = document.getElementById('hoje');
+if (hojeElement) {
+    hojeElement.textContent = dias[d.getDay()] + ', ' + d.toLocaleDateString('pt-BR', {day:'2-digit',month:'long',year:'numeric'});
+}
 
 function showToast(msg, type) {
   const area = document.getElementById('toastArea');
+  if(!area) return;
   const t = document.createElement('div');
   t.className = 'toast ' + (type || '');
   t.textContent = msg;
@@ -597,9 +568,12 @@ async function carregarConsultas() {
 
       json.dados.forEach(c => {
         const tr = document.createElement('tr');
+        const dataFmt = new Date(c.data_consulta).toLocaleDateString('pt-BR');
+        const horaFmt = c.hora_consulta || '—';
         tr.innerHTML = `
           <td class="td-name">${c.paciente.nome}</td>
-          <td class="td-mono">${new Date(c.data_consulta).toLocaleString('pt-BR')}</td>
+          <td class="td-mono">${dataFmt}</td>
+          <td class="td-mono">${horaFmt}</td>
           <td>${c.medico.nome}</td>
           <td>${c.motivo}</td>
           <td><span class="badge badge-amber">${c.status || 'Agendada'}</span></td>
@@ -612,23 +586,134 @@ async function carregarConsultas() {
 }
 
 async function abrirProntuario(idPaciente) {
+  // 1. Muda para a tela na mesma hora
   showPage('prontuario');
+  
   try {
     const token = localStorage.getItem('token');
-    const res = await fetch(`/api/pacientes/${idPaciente}`, { headers: { 'Authorization': 'Bearer ' + token } });
+    const res = await fetch(`/api/pacientes/${idPaciente}`, { 
+        headers: { 'Authorization': 'Bearer ' + token } 
+    });
+    
+    // Verifica se a API deu erro 500 ou 404 antes de ler o JSON
+    if (!res.ok) {
+        showToast('Erro no servidor ao buscar paciente.', 'error');
+        return;
+    }
+
     const json = await res.json();
 
-    if (json.sucesso) {
+    if (json.sucesso && json.dados) {
       const p = json.dados;
-      document.querySelector('.patient-name').textContent = p.nome;
-      document.querySelector('.patient-avatar').textContent = p.nome.substring(0,2).toUpperCase();
+      
+      // TRATAMENTO DE SEGURANÇA: Garante que o nome não seja nulo para não quebrar a tela
+      const nomePaciente = p.nome || 'Nome Indisponível';
+      
+      document.querySelector('.patient-name').textContent = nomePaciente;
+      document.querySelector('.patient-avatar').textContent = nomePaciente.substring(0,2).toUpperCase();
       
       const infoVals = document.querySelectorAll('#page-prontuario .info-val');
       if(infoVals.length >= 2) {
-        infoVals[0].textContent = p.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
-        infoVals[1].innerHTML = p.alergias ? `<span class="allergy-tag">⚠ ${p.alergias}</span>` : 'Nenhuma';
+          
+        // TRATAMENTO DE SEGURANÇA: Garante que o CPF não seja nulo
+        let cpfStr = p.cpf || 'N/A';
+        // Só aplica o replace se o CPF tiver apenas números e 11 caracteres
+        if (cpfStr.length === 11 && !cpfStr.includes('.')) {
+            cpfStr = cpfStr.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+        }
+        
+        infoVals[0].textContent = cpfStr;
+        infoVals[1].innerHTML = p.alergias ? `<span class="allergy-tag">⚠ ${p.alergias}</span>` : 'Nenhuma alergia registrada';
       }
+    } else {
+      showToast('Paciente não encontrado no banco de dados.', 'error');
     }
-  } catch (erro) { showToast('Erro ao carregar prontuário', 'error'); }
+  } catch (erro) { 
+    console.error("Erro interno ao carregar prontuário:", erro);
+    showToast('Erro ao carregar prontuário. Verifique o console.', 'error'); 
+  }
 }
 
+// ══════════════════════════════════════
+// NOVO USUÁRIO / NOVO MÉDICO (UNIFICADO)
+// ══════════════════════════════════════
+
+async function carregarEspecialidades() {
+  try {
+    const res = await fetch('/api/auth/especialidades');
+    
+    let especialidades = [];
+    if (res.ok) {
+        const json = await res.json();
+        if (json.sucesso) especialidades = json.dados;
+    }
+
+    const selectEsp = document.getElementById('nu-especialidade');
+    if (selectEsp) {
+      selectEsp.innerHTML = '<option value="">Selecione a especialidade...</option>';
+      especialidades.forEach(esp => {
+        selectEsp.innerHTML += `<option value="${esp.id}">${esp.nome}</option>`;
+      });
+    }
+  } catch (erro) {
+    console.error('Erro ao carregar especialidades:', erro);
+  }
+}
+
+async function novoUsuario() {
+  const nome = document.getElementById('nu-nome').value.trim();
+  const email = document.getElementById('nu-email').value.trim();
+  const senha = document.getElementById('nu-senha').value;
+  const tipo = document.getElementById('nu-tipo').value;
+
+  if (!nome || !email || !senha) {
+    showToast('❌ Preencha Nome, E-mail e Senha.', 'error');
+    return;
+  }
+
+  let payload = { nome, email, senha, tipo };
+
+  if (tipo === 'medico') {
+    const crm = document.getElementById('nu-crm').value.trim();
+    const id_especialidade = document.getElementById('nu-especialidade').value;
+    
+    if (!crm || !id_especialidade) {
+      showToast('❌ Para cadastrar um médico, CRM e Especialidade são obrigatórios.', 'error');
+      return;
+    }
+    payload.crm = crm;
+    payload.id_especialidade = parseInt(id_especialidade);
+  }
+
+  try {
+    const token = localStorage.getItem('token');
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const json = await res.json();
+
+    if (res.ok && json.sucesso) {
+      showToast('✅ Acesso criado com sucesso!', 'success');
+      
+      if(typeof limparFormUsuario === 'function') limparFormUsuario();
+      
+      showPage('usuarios');
+      
+      if (typeof carregarUsuarios === 'function') carregarUsuarios();
+      if (tipo === 'medico' && typeof carregarMedicos === 'function') carregarMedicos();
+      if (typeof carregarDadosParaAgendamento === 'function') carregarDadosParaAgendamento();
+      
+    } else {
+      showToast('❌ ' + (json.mensagem || 'Erro ao criar usuário'), 'error');
+    }
+  } catch (erro) {
+    console.error('Erro:', erro);
+    showToast('❌ Erro de conexão com o servidor', 'error');
+  }
+}

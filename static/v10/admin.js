@@ -346,6 +346,39 @@ function limparForm() {
   if (nmCrm) nmCrm.value = '';
   if (nmEspecialidade) nmEspecialidade.value = '';
 
+  // Limpar campos do formulário de novo paciente
+  const npNome = document.getElementById('np-nome');
+  const npCpf = document.getElementById('np-cpf');
+  const npNasc = document.getElementById('np-nasc');
+  const npSexo = document.getElementById('np-sexo');
+  const npTel = document.getElementById('np-tel');
+  const npEmail = document.getElementById('np-email');
+  const npSangue = document.getElementById('np-sangue');
+  const npEndereco = document.getElementById('np-endereco');
+  const npAlergias = document.getElementById('np-alergias');
+  const npObservacoes = document.getElementById('np-observacoes');
+  
+  // Sinais Vitais
+  const npPeso = document.getElementById('np-peso');
+  const npAltura = document.getElementById('np-altura');
+  const npPressao = document.getElementById('np-pressao');
+  const npFc = document.getElementById('np-fc');
+
+  if (npNome) npNome.value = '';
+  if (npCpf) npCpf.value = '';
+  if (npNasc) npNasc.value = '';
+  if (npSexo) npSexo.value = '';
+  if (npTel) npTel.value = '';
+  if (npEmail) npEmail.value = '';
+  if (npSangue) npSangue.value = '';
+  if (npEndereco) npEndereco.value = '';
+  if (npAlergias) npAlergias.value = '';
+  if (npObservacoes) npObservacoes.value = '';
+  if (npPeso) npPeso.value = '';
+  if (npAltura) npAltura.value = '';
+  if (npPressao) npPressao.value = '';
+  if (npFc) npFc.value = '';
+
   // Limpar indicador de força de senha
   const forceIndicator = document.getElementById('nu-senha-force');
   if (forceIndicator) forceIndicator.innerHTML = '';

@@ -94,10 +94,51 @@ class Paciente(db.Model):
     observacoes = db.Column(db.Text, nullable=True)
     data_cadastro = db.Column(db.DateTime, default=datetime.utcnow)
     ativo = db.Column(db.Boolean, default=True, nullable=False)
+    
+    # Novos campos - Dados Pessoais
+    naturalidade = db.Column(db.String(100), nullable=True)
+    estado_civil = db.Column(db.String(50), nullable=True)
+    profissao = db.Column(db.String(100), nullable=True)
+    empresa = db.Column(db.String(100), nullable=True)
+    rg = db.Column(db.String(20), nullable=True)
+    mae = db.Column(db.String(150), nullable=True)
+    responsavel = db.Column(db.String(150), nullable=True)
+    
+    # Novos campos - Endereço Detalhado
+    logradouro = db.Column(db.String(150), nullable=True)
+    numero = db.Column(db.String(20), nullable=True)
+    complemento = db.Column(db.String(100), nullable=True)
+    bairro = db.Column(db.String(100), nullable=True)
+    cidade = db.Column(db.String(100), nullable=True)
+    uf = db.Column(db.String(2), nullable=True)
+    cep = db.Column(db.String(9), nullable=True)
+    
+    # Novos campos - Contato de Emergência
+    emergencia_nome = db.Column(db.String(150), nullable=True)
+    emergencia_telefone = db.Column(db.String(20), nullable=True)
+    
+    # Novos campos - Informações Médicas Vitais
+    peso = db.Column(db.Float, nullable=True)
+    altura = db.Column(db.Integer, nullable=True)
+    pressao = db.Column(db.String(10), nullable=True)
+    frequencia_cardiaca = db.Column(db.Integer, nullable=True)
+    
+    # Novos campos - Histórico Médico
+    historico_familiar = db.Column(db.Text, nullable=True)
+    medicamentos = db.Column(db.Text, nullable=True)
+    cirurgias = db.Column(db.Text, nullable=True)
+    
+    # Novos campos - Hábitos
+    tabagismo = db.Column(db.String(50), nullable=True)
+    alcoolismo = db.Column(db.String(50), nullable=True)
+    atividade_fisica = db.Column(db.String(50), nullable=True)
+    
+    # Observações clínicas (renomeado de observacoes)
+    observacoes_clinicas = db.Column(db.Text, nullable=True)
 
     def to_dict(self):
         return {
-            'id': self.id_paciente,  # O frontend consome como 'id'
+            'id': self.id_paciente,
             'cpf': self.cpf,
             'nome': self.nome,
             'data_nascimento': self.data_nascimento.isoformat() if self.data_nascimento else None,
@@ -108,6 +149,33 @@ class Paciente(db.Model):
             'tipo_sanguineo': self.tipo_sanguineo,
             'alergias': self.alergias,
             'observacoes': self.observacoes,
+            'naturalidade': self.naturalidade,
+            'estado_civil': self.estado_civil,
+            'profissao': self.profissao,
+            'empresa': self.empresa,
+            'rg': self.rg,
+            'mae': self.mae,
+            'responsavel': self.responsavel,
+            'logradouro': self.logradouro,
+            'numero': self.numero,
+            'complemento': self.complemento,
+            'bairro': self.bairro,
+            'cidade': self.cidade,
+            'uf': self.uf,
+            'cep': self.cep,
+            'emergencia_nome': self.emergencia_nome,
+            'emergencia_telefone': self.emergencia_telefone,
+            'peso': self.peso,
+            'altura': self.altura,
+            'pressao': self.pressao,
+            'frequencia_cardiaca': self.frequencia_cardiaca,
+            'historico_familiar': self.historico_familiar,
+            'medicamentos': self.medicamentos,
+            'cirurgias': self.cirurgias,
+            'tabagismo': self.tabagismo,
+            'alcoolismo': self.alcoolismo,
+            'atividade_fisica': self.atividade_fisica,
+            'observacoes_clinicas': self.observacoes_clinicas,
             'ativo': self.ativo
         }
 
@@ -120,19 +188,35 @@ class Paciente(db.Model):
 class Consulta(db.Model):
     __tablename__ = 'consulta'  # No singular, como está no banco
     
-    id_consulta = db.Column(db.Integer, primary_key=True, autoincrement=True) # <-- CORRIGIDO AQUI
+    id_consulta = db.Column(db.Integer, primary_key=True, autoincrement=True)
     id_paciente = db.Column(db.Integer, db.ForeignKey('paciente.id_paciente'), nullable=False)
     id_medico = db.Column(db.Integer, db.ForeignKey('medicos.id'), nullable=False)
     data_consulta = db.Column(db.DateTime, nullable=False)
+    hora_consulta = db.Column(db.String(5), nullable=True)  # Formato HH:MM
     status = db.Column(db.String(20), default='AGENDADA')
+    motivo = db.Column(db.String(255), nullable=True)
+    
+    # Relações
+    paciente = db.relationship('Paciente', backref='consultas')
+    medico = db.relationship('Medico', backref='consultas')
 
     def to_dict(self):
         return {
-            'id': self.id_consulta,  # O JS continua lendo 'id' sem quebrar o front
+            'id': self.id_consulta,
             'id_paciente': self.id_paciente,
             'id_medico': self.id_medico,
             'data_consulta': self.data_consulta.isoformat() if self.data_consulta else None,
-            'status': self.status
+            'hora_consulta': self.hora_consulta,
+            'status': self.status,
+            'motivo': self.motivo,
+            'paciente': {
+                'id': self.paciente.id_paciente,
+                'nome': self.paciente.nome
+            } if self.paciente else {},
+            'medico': {
+                'id': self.medico.id,
+                'nome': self.medico.usuario.nome if self.medico and self.medico.usuario else 'Desconhecido'
+            } if self.medico else {}
         }
 
 # ════════════════════════════════════════════════════════════

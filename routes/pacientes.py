@@ -168,6 +168,40 @@ def criar_paciente():
                 tipo_sanguineo=dados.get('tipo_sanguineo'),
                 alergias=dados.get('alergias'),
                 observacoes=dados.get('observacoes'),
+                # Novos campos - Dados Pessoais
+                naturalidade=dados.get('naturalidade'),
+                estado_civil=dados.get('estado_civil'),
+                profissao=dados.get('profissao'),
+                empresa=dados.get('empresa'),
+                rg=dados.get('rg'),
+                mae=dados.get('mae'),
+                responsavel=dados.get('responsavel'),
+                # Novos campos - Endereço Detalhado
+                logradouro=dados.get('logradouro'),
+                numero=dados.get('numero'),
+                complemento=dados.get('complemento'),
+                bairro=dados.get('bairro'),
+                cidade=dados.get('cidade'),
+                uf=dados.get('uf'),
+                cep=dados.get('cep'),
+                # Novos campos - Contato de Emergência
+                emergencia_nome=dados.get('emergencia_nome'),
+                emergencia_telefone=dados.get('emergencia_telefone'),
+                # Novos campos - Informações Médicas Vitais
+                peso=float(dados.get('peso', 0)) if dados.get('peso') else None,
+                altura=int(dados.get('altura', 0)) if dados.get('altura') else None,
+                pressao=dados.get('pressao'),
+                frequencia_cardiaca=int(dados.get('frequencia_cardiaca', 0)) if dados.get('frequencia_cardiaca') else None,
+                # Novos campos - Histórico Médico
+                historico_familiar=dados.get('historico_familiar'),
+                medicamentos=dados.get('medicamentos'),
+                cirurgias=dados.get('cirurgias'),
+                # Novos campos - Hábitos
+                tabagismo=dados.get('tabagismo'),
+                alcoolismo=dados.get('alcoolismo'),
+                atividade_fisica=dados.get('atividade_fisica'),
+                # Observações clínicas
+                observacoes_clinicas=dados.get('observacoes_clinicas'),
                 ativo=True
             )
             
@@ -236,6 +270,67 @@ def atualizar_paciente(id):
                 paciente.alergias = dados['alergias']
             if 'observacoes' in dados:
                 paciente.observacoes = dados['observacoes']
+            # Novos campos - Dados Pessoais
+            if 'naturalidade' in dados:
+                paciente.naturalidade = dados['naturalidade']
+            if 'estado_civil' in dados:
+                paciente.estado_civil = dados['estado_civil']
+            if 'profissao' in dados:
+                paciente.profissao = dados['profissao']
+            if 'empresa' in dados:
+                paciente.empresa = dados['empresa']
+            if 'rg' in dados:
+                paciente.rg = dados['rg']
+            if 'mae' in dados:
+                paciente.mae = dados['mae']
+            if 'responsavel' in dados:
+                paciente.responsavel = dados['responsavel']
+            # Novos campos - Endereço Detalhado
+            if 'logradouro' in dados:
+                paciente.logradouro = dados['logradouro']
+            if 'numero' in dados:
+                paciente.numero = dados['numero']
+            if 'complemento' in dados:
+                paciente.complemento = dados['complemento']
+            if 'bairro' in dados:
+                paciente.bairro = dados['bairro']
+            if 'cidade' in dados:
+                paciente.cidade = dados['cidade']
+            if 'uf' in dados:
+                paciente.uf = dados['uf']
+            if 'cep' in dados:
+                paciente.cep = dados['cep']
+            # Novos campos - Contato de Emergência
+            if 'emergencia_nome' in dados:
+                paciente.emergencia_nome = dados['emergencia_nome']
+            if 'emergencia_telefone' in dados:
+                paciente.emergencia_telefone = dados['emergencia_telefone']
+            # Novos campos - Informações Médicas
+            if 'peso' in dados:
+                paciente.peso = float(dados['peso']) if dados['peso'] else None
+            if 'altura' in dados:
+                paciente.altura = int(dados['altura']) if dados['altura'] else None
+            if 'pressao' in dados:
+                paciente.pressao = dados['pressao']
+            if 'frequencia_cardiaca' in dados:
+                paciente.frequencia_cardiaca = int(dados['frequencia_cardiaca']) if dados['frequencia_cardiaca'] else None
+            # Histórico Médico
+            if 'historico_familiar' in dados:
+                paciente.historico_familiar = dados['historico_familiar']
+            if 'medicamentos' in dados:
+                paciente.medicamentos = dados['medicamentos']
+            if 'cirurgias' in dados:
+                paciente.cirurgias = dados['cirurgias']
+            # Hábitos
+            if 'tabagismo' in dados:
+                paciente.tabagismo = dados['tabagismo']
+            if 'alcoolismo' in dados:
+                paciente.alcoolismo = dados['alcoolismo']
+            if 'atividade_fisica' in dados:
+                paciente.atividade_fisica = dados['atividade_fisica']
+            # Observações
+            if 'observacoes_clinicas' in dados:
+                paciente.observacoes_clinicas = dados['observacoes_clinicas']
             
             db.session.flush()
             

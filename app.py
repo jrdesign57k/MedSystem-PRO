@@ -23,7 +23,7 @@ def create_app():
     db_user = os.getenv('DB_USER', 'root')
     db_pass = os.getenv('DB_PASSWORD', '')
     db_host = os.getenv('DB_HOST', 'localhost')
-    db_name = os.getenv('DB_NAME', 'medsystem')
+    db_name = os.getenv('DB_NAME', 'medsystem_novo')
 
     # Configurações do App - String de conexão do SQLAlchemy para MySQL
     app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+mysqlconnector://{db_user}:{db_pass}@{db_host}/{db_name}'
@@ -54,9 +54,46 @@ def create_app():
         app.register_blueprint(medicos_bp, url_prefix='/api/medicos')
         app.register_blueprint(dashboard_bp, url_prefix='/api/dashboard')
         
-        # ──── CRIAÇÃO DO BANCO E USUÁRIO INICIAL ────
-        try:
-            db.create_all()
+       # ──── CRIAÇÃO DO BANCO E DADOS INICIAIS ──── 
+        try: 
+            db.create_all() 
+            
+            # ──── INSERIR ESPECIALIDADES AUTOMATICAMENTE ────
+            from models import Especialidade, Medico  # Certifique-se de que o nome da classe no seu models.py é Especialidade
+            try:
+                if not Especialidade.query.first():
+                    especialidades_padrao = [
+                        Especialidade(id=1, nome='Cardiologia'),
+                        Especialidade(id=2, nome='Clínica Geral'),
+                        Especialidade(id=3, nome='Pediatria'),
+                        Especialidade(id=4, nome='Ginecologia e Obstetrícia'),
+                        Especialidade(id=5, nome='Ortopedia'),
+                        Especialidade(id=6, nome='Neurologia'),
+                        Especialidade(id=7, nome='Oftalmologia'),
+                        Especialidade(id=8, nome='Cirurgia Geral')
+                    ]
+                    db.session.bulk_save_objects(especialidades_padrao)
+                    db.session.commit()
+                    print("✓ 8 Especialidades médicas inseridas com sucesso!")
+            except Exception as esp_err:
+                print(f"ℹ Nota: {esp_err}")
+
+            # Verifica se o usuário ADMIN (Principal) existe 
+            admin = Usuario.query.filter_by(email='medico@medsystem.com').first() 
+            if not admin: 
+                admin_user = Usuario( 
+                    nome="Administrador Principal", 
+                    email="medico@medsystem.com", 
+                    tipo="admin", 
+                    ativo=True 
+                ) 
+                admin_user.set_senha("MedSystem12#") 
+                db.session.add(admin_user) 
+                db.session.commit()
+                print("✓ Usuário Admin criado.")
+                
+        except Exception as e:
+            print(f"⚠️ Erro na inicialização: {e}")
             
             # Verifica se o usuário ADMIN (Principal) existe
             admin = Usuario.query.filter_by(email='medico@medsystem.com').first()
@@ -83,9 +120,18 @@ def create_app():
                 user.set_senha("MedSystem12#")
                 db.session.add(user)
                 db.session.flush()
+                
+                # Criar registro de médico com CRM formatado (XX000000)
+                medico_record = Medico(
+                    id_usuario=user.id,
+                    crm="SP123456",  # Formato fixo: UF + números
+                    id_especialidade=2  # Clínica Geral
+                )
+                db.session.add(medico_record)
                 print("\n" + "="*50)
                 print("✓ USUÁRIO MÉDICO CRIADO: drcarlos@medsystem.com")
                 print("✓ SENHA DEFINIDA: MedSystem12#")
+                print("✓ CRM DEFINIDO: SP123456")
                 print("="*50 + "\n")
             
             if admin or medico:
@@ -111,6 +157,20 @@ def create_app():
                     db.drop_all()
                     db.create_all()
                     
+                    # Criar especialidades
+                    especialidades_padrao = [
+                        Especialidade(id=1, nome='Cardiologia'),
+                        Especialidade(id=2, nome='Clínica Geral'),
+                        Especialidade(id=3, nome='Pediatria'),
+                        Especialidade(id=4, nome='Ginecologia e Obstetrícia'),
+                        Especialidade(id=5, nome='Ortopedia'),
+                        Especialidade(id=6, nome='Neurologia'),
+                        Especialidade(id=7, nome='Oftalmologia'),
+                        Especialidade(id=8, nome='Cirurgia Geral')
+                    ]
+                    db.session.bulk_save_objects(especialidades_padrao)
+                    db.session.flush()
+                    
                     # Criar usuário admin principal
                     admin_user = Usuario(
                         nome="Administrador Principal",
@@ -120,6 +180,7 @@ def create_app():
                     )
                     admin_user.set_senha("MedSystem12#")
                     db.session.add(admin_user)
+                    db.session.flush()
                     
                     # Criar usuário médico de teste
                     user = Usuario(
@@ -130,12 +191,23 @@ def create_app():
                     )
                     user.set_senha("MedSystem12#")
                     db.session.add(user)
+                    db.session.flush()
+                    
+                    # Criar registro de médico com CRM formatado
+                    medico_record = Medico(
+                        id_usuario=user.id,
+                        crm="SP123456",  # Formato fixo: UF + números
+                        id_especialidade=2  # Clínica Geral
+                    )
+                    db.session.add(medico_record)
                     db.session.commit()
                     
                     print("="*50)
                     print("✓ BANCO RECRIADO COM SUCESSO")
                     print("✓ ADMIN PRINCIPAL: medico@medsystem.com")
                     print("✓ MÉDICO TESTE: drcarlos@medsystem.com")
+                    print("✓ CRM MÉDICO: SP123456")
+                    print("✓ ESPECIALIDADES: 8 adicionadas")
                     print("✓ SENHA: MedSystem12#")
                     print("="*50 + "\n")
                 except Exception as e2:
@@ -166,6 +238,74 @@ def create_app():
             return jsonify({"status": "ok", "database": "connected"}), 200
         except Exception as e:
             return jsonify({"status": "error", "database": "disconnected", "details": str(e)}), 500
+
+    # ──── DASHBOARD ────
+    @app.route('/dashboard')
+    def dashboard():
+        """Entrega a página do dashboard"""
+        try:
+            return render_template('dashboard.html')
+        except Exception as e:
+            print(f"\n⚠️ Erro ao renderizar dashboard.html: {e}\n")
+            import traceback
+            traceback.print_exc()
+            return f"<h1>Erro ao carregar dashboard</h1><p>{str(e)}</p>", 500
+
+    # ──── APP ROUTES (COM SIDEBAR) ────
+    @app.route('/app/dashboard')
+    def app_dashboard():
+        """Dashboard com sidebar"""
+        try:
+            return render_template('app_dashboard.html', page='dashboard')
+        except Exception as e:
+            return f"<h1>Erro</h1><p>{str(e)}</p>", 500
+
+    @app.route('/app/pacientes')
+    def app_pacientes():
+        """Listagem de pacientes"""
+        try:
+            return render_template('app_pacientes.html', page='pacientes')
+        except Exception as e:
+            return f"<h1>Erro</h1><p>{str(e)}</p>", 500
+
+    @app.route('/app/paciente/<int:paciente_id>')
+    def app_ficha_paciente(paciente_id):
+        """Ficha detalhada do paciente"""
+        try:
+            return render_template('app_ficha_paciente.html', page='pacientes', paciente_id=paciente_id)
+        except Exception as e:
+            return f"<h1>Erro</h1><p>{str(e)}</p>", 500
+
+    @app.route('/app/novo-paciente')
+    def app_novo_paciente():
+        """Formulário novo paciente"""
+        try:
+            return render_template('app_novo_paciente.html', page='novo-paciente')
+        except Exception as e:
+            return f"<h1>Erro</h1><p>{str(e)}</p>", 500
+
+    @app.route('/app/editar-paciente/<int:paciente_id>')
+    def app_editar_paciente(paciente_id):
+        """Formulário editar paciente"""
+        try:
+            return render_template('app_novo_paciente.html', page='pacientes', paciente_id=paciente_id, edit_mode=True)
+        except Exception as e:
+            return f"<h1>Erro</h1><p>{str(e)}</p>", 500
+
+    @app.route('/app/consultas')
+    def app_consultas():
+        """Listagem de consultas (placeholder)"""
+        return render_template('app_dashboard.html', page='consultas')
+
+    @app.route('/app/exames')
+    def app_exames():
+        """Listagem de exames (placeholder)"""
+        return render_template('app_dashboard.html', page='exames')
+
+    @app.route('/app/diagnosticos')
+    def app_diagnosticos():
+        """Listagem de diagnósticos (placeholder)"""
+        return render_template('app_dashboard.html', page='diagnosticos')
 
     # ──── HANDLER DE ERROS GLOBAL ────
     @app.errorhandler(500)

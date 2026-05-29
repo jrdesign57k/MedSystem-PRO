@@ -34,10 +34,47 @@ def login():
         if user and user.verificar_senha(dados.get('senha')):
             if not user.ativo:
                 return jsonify({'sucesso': False, 'mensagem': 'Usuário inativo'}), 401
+                
             access_token = create_access_token(identity=str(user.id))
-            return jsonify({'sucesso': True, 'mensagem': 'Login realizado com sucesso', 'token': access_token, 'usuario': user.to_dict()}), 200
+            
+            # --- AJUSTE AQUI: Garante o envio de CRM e Especialidade direto no Login ---
+            usuario_dados = user.to_dict()
+            usuario_dados['crm'] = 'N/A'
+            usuario_dados['especialidade'] = 'N/A'
+            
+            if user.tipo == 'medico' and getattr(user, 'medico', None):
+                usuario_dados['crm'] = user.medico.crm
+                usuario_dados['especialidade'] = user.medico.especialidade.nome if user.medico.especialidade else 'N/A'
+                
+            return jsonify({
+                'sucesso': True, 
+                'mensagem': 'Login realizado com sucesso', 
+                'token': access_token, 
+                'usuario': usuario_dados
+            }), 200
         
         return jsonify({'sucesso': False, 'mensagem': 'E-mail ou senha incorretos'}), 401
+    except Exception as e:
+        return jsonify({'sucesso': False, 'mensagem': str(e)}), 500
+
+
+@auth_bp.route('/perfil', methods=['GET'])
+@jwt_required()
+def obter_perfil():
+    try:
+        usuario = Usuario.query.get(get_jwt_identity())
+        if not usuario: return jsonify({'sucesso': False, 'mensagem': 'Usuário não encontrado'}), 404
+        
+        # --- AJUSTE AQUI: Facilita a leitura para o Frontend ---
+        resposta = usuario.to_dict()
+        resposta['crm'] = 'N/A'
+        resposta['especialidade'] = 'N/A'
+        
+        if usuario.tipo == 'medico' and getattr(usuario, 'medico', None):
+            resposta['crm'] = usuario.medico.crm
+            resposta['especialidade'] = usuario.medico.especialidade.nome if usuario.medico.especialidade else 'N/A'
+            
+        return jsonify({'sucesso': True, 'dados': resposta}), 200
     except Exception as e:
         return jsonify({'sucesso': False, 'mensagem': str(e)}), 500
 
@@ -56,52 +93,46 @@ def registrar():
         if Usuario.query.filter_by(email=dados['email']).first():
             return jsonify({'sucesso': False, 'mensagem': 'Email já cadastrado'}), 409
             
-        novo_usuario = Usuario(nome=dados['nome'], email=dados['email'], tipo=dados.get('tipo', 'recepcao'), ativo=True)
+        tipo_usuario = dados.get('tipo', 'recepcao')
+        
+        # 1. Cria o login (Usuario)
+        novo_usuario = Usuario(nome=dados['nome'], email=dados['email'], tipo=tipo_usuario, ativo=True)
         novo_usuario.set_senha(dados['senha'])
         db.session.add(novo_usuario)
         
-        log = LogAuditoria(tabela='usuarios', operacao='INSERT', id_registro=novo_usuario.id, detalhe='Novo usuário criado')
+        # 2. Salva temporariamente para o banco gerar o novo_usuario.id
+        db.session.flush()
+        
+        # 3. Se for médico, já cria o perfil atrelado na tabela 'medicos'
+        if tipo_usuario == 'medico':
+            crm = dados.get('crm')
+            id_especialidade = dados.get('id_especialidade')
+            
+            # Trava de segurança
+            if not crm or not id_especialidade:
+                db.session.rollback()
+                return jsonify({'sucesso': False, 'mensagem': 'CRM e Especialidade são obrigatórios para cadastrar um médico.'}), 400
+                
+            novo_medico = Medico(
+                id_usuario=novo_usuario.id,
+                crm=crm,
+                id_especialidade=id_especialidade
+            )
+            db.session.add(novo_medico)
+        
+        # 4. Registra o log
+        log = LogAuditoria(tabela='usuarios', operacao='INSERT', id_registro=novo_usuario.id, detalhe=f'Novo usuário criado ({tipo_usuario})')
         db.session.add(log)
+        
+        # 5. Salva tudo de forma definitiva
         db.session.commit()
         
         return jsonify({'sucesso': True, 'mensagem': 'Usuário registrado com sucesso', 'dados': novo_usuario.to_dict()}), 201
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'sucesso': False, 'mensagem': str(e)}), 500
-
-@auth_bp.route('/perfil', methods=['GET'])
-@jwt_required()
-def obter_perfil():
-    try:
-        usuario = Usuario.query.get(get_jwt_identity())
-        if not usuario: return jsonify({'sucesso': False, 'mensagem': 'Usuário não encontrado'}), 404
         
-        resposta = usuario.to_dict()
-        if usuario.tipo == 'medico' and getattr(usuario, 'medico', None):
-            resposta['medico'] = {
-                'id': usuario.medico.id,
-                'crm': usuario.medico.crm,
-                'especialidade': usuario.medico.especialidade.nome if usuario.medico.especialidade else 'N/A'
-            }
-        return jsonify({'sucesso': True, 'dados': resposta}), 200
-    except Exception as e:
-        return jsonify({'sucesso': False, 'mensagem': str(e)}), 500
-
-@auth_bp.route('/alterar-senha', methods=['PUT'])
-@jwt_required()
-def alterar_senha():
-    try:
-        usuario = Usuario.query.get(get_jwt_identity())
-        dados = request.get_json()
-        if not usuario.verificar_senha(dados.get('senha_atual', '')):
-            return jsonify({'sucesso': False, 'mensagem': 'Senha atual incorreta'}), 401
-            
-        usuario.set_senha(dados.get('nova_senha', ''))
-        db.session.commit()
-        return jsonify({'sucesso': True, 'mensagem': 'Senha alterada com sucesso'}), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({'sucesso': False, 'mensagem': str(e)}), 500
+
 
 @auth_bp.route('/usuarios', methods=['GET'])
 @jwt_required()
@@ -130,4 +161,20 @@ def deletar_usuario(id):
         return jsonify({'sucesso': True, 'mensagem': 'Usuário desativado com sucesso'}), 200
     except Exception as e:
         db.session.rollback()
+        return jsonify({'sucesso': False, 'mensagem': str(e)}), 500
+
+
+@auth_bp.route('/especialidades', methods=['GET'])
+def listar_especialidades():
+    """Retorna lista de todas as especialidades - Sem autenticação para loading inicial"""
+    try:
+        from models import Especialidade
+        especialidades = Especialidade.query.all()
+        
+        return jsonify({
+            'sucesso': True,
+            'total': len(especialidades),
+            'dados': [{'id': e.id, 'nome': e.nome} for e in especialidades]
+        }), 200
+    except Exception as e:
         return jsonify({'sucesso': False, 'mensagem': str(e)}), 500
