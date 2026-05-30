@@ -1,2 +1,10 @@
 mysql-connector-python
 python-dotenv
+
+Flask
+flask-cors
+Flask-SQLAlchemy
+Flask-JWT-Extended
+Flask-Bcrypt
+mysql-connector-python
+python-dotenv
