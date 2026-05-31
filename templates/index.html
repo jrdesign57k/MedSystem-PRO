@@ -130,7 +130,13 @@
   </div>
 </aside>
 
+<div id="sidebarOverlay" class="sidebar-overlay"></div>
+
 <main class="main">
+  <button id="mobile-menu-btn" class="btn btn-outline hide-desktop mobile-menu-toggle" type="button" aria-label="Abrir menu">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+    Menu
+  </button>
 
   <div id="page-dashboard" class="page active">
     <div class="page-header">
@@ -145,35 +151,62 @@
     </div>
 
     <div class="stats-grid">
-      <div class="stat-card">
+      <div class="stat-card stat-blue">
         <div class="stat-label">Consultas Hoje</div>
         <div class="stat-value" id="dash-consultas">0</div>
         <div class="stat-delta">Atualizado agora</div>
       </div>
-      <div class="stat-card">
+      <div class="stat-card stat-green">
         <div class="stat-label">Pacientes Ativos</div>
         <div class="stat-value" id="dash-pacientes">0</div>
         <div class="stat-delta">Total cadastrado</div>
       </div>
-      <div class="stat-card">
+      <div class="stat-card stat-amber">
         <div class="stat-label">Exames Pendentes</div>
         <div class="stat-value" id="dash-exames" style="color:var(--amber-light)">0</div>
         <div class="stat-delta warn">No laboratório</div>
       </div>
-      <div class="stat-card">
+      <div class="stat-card stat-red">
         <div class="stat-label">Casos Críticos</div>
         <div class="stat-value" style="color:var(--red-light)">1</div>
         <div class="stat-delta danger">● Atenção imediata</div>
       </div>
     </div>
 
-    <div class="card section-gap" style="margin-top: 24px;">
-      <div class="card-header"><span class="card-title">Consultas de Hoje</span></div>
-      <div class="table-wrap">
-        <table id="tabela-dash-consultas">
-          <thead><tr><th>Paciente</th><th>Horário</th><th>Status</th></tr></thead>
-          <tbody><tr><td colspan="3" style="text-align: center;">Carregando...</td></tr></tbody>
-        </table>
+    <div class="two-col section-gap">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Consultas de Hoje</span>
+          <button class="card-action" onclick="showPage('consultas')">Ver todas →</button>
+        </div>
+        <div class="table-wrap">
+          <table id="tabela-dash-consultas">
+            <thead><tr><th>Paciente</th><th>Horário</th><th>Status</th></tr></thead>
+            <tbody><tr><td colspan="3" style="text-align: center;">Carregando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Exames Pendentes (CURSOR)</span>
+          <button class="card-action" onclick="showPage('exames')">Ver todos →</button>
+        </div>
+        <div class="table-wrap">
+          <table id="tabela-dash-exames">
+            <thead><tr><th>Paciente</th><th>Qtd</th><th>Urgente</th></tr></thead>
+            <tbody><tr><td colspan="3" style="text-align: center;">Carregando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="alertas-section">
+      <div class="section-header">
+        <h2>Alertas Clínicos</h2>
+      </div>
+      <div id="alertas-list" class="alerta-list">
+        <div class="alerta-empty">Carregando alertas clínicos...</div>
       </div>
     </div>
   </div>
@@ -187,12 +220,18 @@
       <button class="btn btn-primary" onclick="showPage('nova_consulta')">Agendar Consulta</button>
     </div>
     <div class="card section-gap">
-      <div class="card-header"><span class="card-title">Lista de Consultas</span></div>
+      <div class="card-header">
+        <span class="card-title">Lista de Consultas</span>
+        <div class="search-bar">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="11" cy="11" r="7" stroke-width="2" stroke="currentColor" fill="none"/><line x1="17" y1="17" x2="22" y2="22" stroke-width="2" stroke="currentColor" stroke-linecap="round"/></svg>
+          <input type="search" id="consulta-search" placeholder="Buscar paciente..." oninput="filtrarConsultas(this.value)" />
+        </div>
+      </div>
       <div class="table-wrap">
         <table id="tabela-consultas">
           <thead><tr><th>Paciente</th><th>Data</th><th>Horário</th><th>Médico</th><th>Motivo</th><th>Status</th><th>Ação</th></tr></thead>
           <tbody>
-            <tr><td colspan="6" style="text-align: center;">Carregando consultas...</td></tr>
+            <tr><td colspan="7" style="text-align: center;">Carregando consultas...</td></tr>
           </tbody>
         </table>
       </div>
@@ -423,6 +462,7 @@
       <button class="btn btn-primary" onclick="showPage('novo_usuario')">+ Novo Usuário</button>
     </div>
     <div class="card">
+      <div class="table-wrap">
       <table class="table">
         <thead>
           <tr>
@@ -437,6 +477,7 @@
           <tr><td colspan="5" style="text-align: center;">Carregando...</td></tr>
         </tbody>
       </table>
+      </div>
     </div>
   </div>
 

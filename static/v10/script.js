@@ -188,8 +188,81 @@ async function carregarDashboard() {
         }
       }
     }
+
+    await carregarExamesPendentes();
+    await carregarAlertasDashboard();
   } catch (erro) {
     console.error('Erro no dashboard:', erro);
+  }
+}
+
+async function carregarExamesPendentes() {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    const res = await fetch('/api/exames/pendentes', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const json = await res.json();
+    const tbody = document.querySelector('#tabela-dash-exames tbody');
+    if (!tbody) return;
+
+    if (json.sucesso && json.dados && Object.keys(json.dados).length > 0) {
+      tbody.innerHTML = '';
+      Object.entries(json.dados).slice(0, 5).forEach(([paciente, info]) => {
+        const urgente = info.exames.some(exame => exame.status === 'EM_ANALISE') ? 'SIM' : 'NÃO';
+        tbody.innerHTML += `
+          <tr>
+            <td class="td-name">${paciente}</td>
+            <td>${info.quantidade}</td>
+            <td class="${urgente === 'SIM' ? 'badge-red' : 'badge-green'}">${urgente}</td>
+          </tr>
+        `;
+      });
+    } else {
+      tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #999;">Nenhum exame pendente encontrado</td></tr>';
+    }
+  } catch (erro) {
+    console.error('Erro ao carregar exames pendentes:', erro);
+  }
+}
+
+async function carregarAlertasDashboard() {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    const res = await fetch('/api/dashboard/alertas', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const json = await res.json();
+    const container = document.getElementById('alertas-list');
+    if (!container) return;
+
+    if (json.sucesso && Array.isArray(json.dados) && json.dados.length > 0) {
+      container.innerHTML = '';
+      json.dados.slice(0, 4).forEach(alerta => {
+        const dataTexto = alerta.data ? new Date(alerta.data).toLocaleDateString('pt-BR') : 'Data não disponível';
+        const tipoClasse = alerta.gravidade === 'CRITICA' ? 'alerta-critico' : 'alerta-grave';
+        const icone = alerta.gravidade === 'CRITICA' ? '⚠' : '❗';
+
+        container.innerHTML += `
+          <div class="alerta-item ${tipoClasse}">
+            <div class="alerta-icon">${icone}</div>
+            <div class="alerta-content">
+              <div class="alerta-title">${alerta.paciente} — ${alerta.tipo}</div>
+              <div class="alerta-text">${alerta.descricao || 'Sem descrição adicional.'}</div>
+              <div class="alerta-meta">${dataTexto} · ${alerta.gravidade}</div>
+            </div>
+          </div>
+        `;
+      });
+    } else {
+      container.innerHTML = '<div class="alerta-empty">Nenhum alerta clínico no momento.</div>';
+    }
+  } catch (erro) {
+    console.error('Erro ao carregar alertas do dashboard:', erro);
   }
 }
 
@@ -717,3 +790,34 @@ async function novoUsuario() {
     showToast('❌ Erro de conexão com o servidor', 'error');
   }
 }
+
+// MOBILE: Toggle do sidebar com overlay
+document.addEventListener('DOMContentLoaded', function() {
+  const btn = document.getElementById('mobile-menu-btn');
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+
+  function closeSidebar() {
+    if (sidebar) sidebar.classList.remove('open');
+    if (overlay) overlay.style.display = 'none';
+  }
+
+  if (btn && sidebar) {
+    btn.addEventListener('click', function() {
+      const opening = !sidebar.classList.contains('open');
+      if (opening) {
+        sidebar.classList.add('open');
+        if (overlay) overlay.style.display = 'block';
+      } else {
+        closeSidebar();
+      }
+    });
+  }
+
+  if (overlay) overlay.addEventListener('click', closeSidebar);
+
+  // Fecha o menu ao redimensionar para desktop
+  window.addEventListener('resize', function() {
+    if (window.innerWidth > 768) closeSidebar();
+  });
+});
