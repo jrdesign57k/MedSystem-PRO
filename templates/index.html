@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>MedSystem — Sistema Médico</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="{{ url_for('static', filename='v10/style.css') }}"/>
+<link rel="stylesheet" href="static/v10/style.css"/>
 </head>
 <body>
 
@@ -114,7 +114,7 @@
       <button class="nav-item" onclick="showPage('usuarios')">
         <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
         Usuários
-      
+      </button>
     </div>
   </nav>
 
@@ -322,7 +322,7 @@
     <div class="card">
       <div class="card-header"><span class="card-title">Histórico</span></div>
       <div class="card-body">
-        <div class="dx-card moderada"><div class="dx-cid">CID-10: G44.3</div></div>
+        <div class="dx-card templates"><div class="dx-cid">CID-10: G44.3</div></div>
       </div>
     </div>
   </div>
@@ -332,19 +332,13 @@
       <div class="page-title">Novo Paciente</div>
     </div>
     
-    <!-- CARD 1: DADOS DO PACIENTE -->
     <div class="card">
       <div class="card-header"><span class="card-title">Dados do Paciente</span></div>
       <div class="card-body">
         <div class="form-grid">
-          <!-- ROW 1: DADOS BÁSICOS -->
           <div class="form-group full"><label>Nome Completo *</label><input id="np-nome" placeholder="Nome Sobrenome"/></div>
-          
-          <!-- ROW 2: CPF E DATA DE NASCIMENTO -->
           <div class="form-group"><label>CPF *</label><input id="np-cpf" placeholder="000.000.000-00" oninput="mascaraCPF(this)"/></div>
           <div class="form-group"><label>Data de Nascimento *</label><input id="np-nasc" type="date"/></div>
-          
-          <!-- ROW 3: SEXO E TELEFONE -->
           <div class="form-group">
             <label>Sexo *</label>
             <select id="np-sexo">
@@ -355,8 +349,6 @@
             </select>
           </div>
           <div class="form-group"><label>Telefone</label><input id="np-tel" placeholder="(XX) 9XXXX-XXXX" oninput="mascaraTel(this)"/></div>
-
-          <!-- ROW 4: E-MAIL E TIPO SANGUÍNEO -->
           <div class="form-group"><label>E-mail</label><input id="np-email" type="email" placeholder="paciente@email.com"/></div>
           <div class="form-group">
             <label>Tipo Sanguíneo</label>
@@ -372,17 +364,11 @@
               <option value="AB-">AB-</option>
             </select>
           </div>
-
-          <!-- ROW 5: ENDEREÇO COMPLETO -->
           <div class="form-group full"><label>Endereço</label><input id="np-endereco" placeholder="Rua, número, complemento"/></div>
-
-          <!-- ROW 6: ALERGIAS -->
           <div class="form-group full">
             <label>Alergias</label>
             <textarea id="np-alergias" placeholder="Descreva alergias conhecidas (medicamentos, alimentos, etc.)"></textarea>
           </div>
-
-          <!-- ROW 7: OBSERVAÇÕES CLÍNICAS -->
           <div class="form-group full">
             <label>Observações Clínicas</label>
             <textarea id="np-observacoes" placeholder="Anotações relevantes sobre histórico médico, condições pré-existentes, etc."></textarea>
@@ -391,16 +377,12 @@
       </div>
     </div>
 
-    <!-- CARD 2: SINAIS VITAIS (Opcional) -->
     <div class="card" style="margin-top: 20px;">
       <div class="card-header"><span class="card-title">Sinais Vitais (Opcional)</span></div>
       <div class="card-body">
         <div class="form-grid">
-          <!-- ROW 1: PESO E ALTURA -->
           <div class="form-group"><label>Peso (kg)</label><input id="np-peso" type="number" step="0.1" placeholder="Ex: 78"/></div>
           <div class="form-group"><label>Altura (cm)</label><input id="np-altura" type="number" placeholder="Ex: 175"/></div>
-          
-          <!-- ROW 2: PRESSÃO E FREQUÊNCIA CARDÍACA -->
           <div class="form-group"><label>Pressão Arterial (mmHg)</label><input id="np-pressao" placeholder="Ex: 130/85"/></div>
           <div class="form-group"><label>Frequência Cardíaca (bpm)</label><input id="np-fc" type="number" placeholder="Ex: 72"/></div>
         </div>
@@ -408,7 +390,6 @@
       </div>
     </div>
 
-    <!-- BOTÕES -->
     <div class="flex-end" style="margin-top:20px; gap: 10px;">
       <button class="btn btn-outline" onclick="limparForm()">Limpar</button>
       <button class="btn btn-primary" onclick="cadastrarPaciente()">Cadastrar Paciente</button>
@@ -531,7 +512,6 @@
     </div>
   </div>
 
-
 </main>
 </div>
 
@@ -569,8 +549,10 @@
   }
 </script>
 
-<script src="{{ url_for('static', filename='v10/validacoes.js') }}"></script>
-<script src="{{ url_for('static', filename='v10/admin.js') }}"></script>
-<script src="{{ url_for('static', filename='v10/script.js') }}"></script>
+<script src="config.js"></script>
+<script src="static/js/api.js"></script>
+<script src="static/v10/validacoes.js"></script>
+<script src="static/v10/admin.js"></script>
+<script src="static/v10/script.js"></script>
 </body>
 </html>

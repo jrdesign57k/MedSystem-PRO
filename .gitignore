@@ -29,6 +29,7 @@ env/
 ENV/
 .venv
 
+.infra
 .vscode/
 .vs/
 .idea/
