@@ -63,8 +63,7 @@ def obter_relatorios():
         consultas_por_medico = db.session.query(
             Medico.id,
             Medico.crm,
-            func.count(Consulta.id_consulta).label('total'),
-            db.func.concat(db.select(Usuario.nome).where(Usuario.id == Medico.id_usuario).correlate(Medico)).label('nome_medico')
+            func.count(Consulta.id_consulta).label('total')
         ).join(
             Consulta, Medico.id == Consulta.id_medico
         ).filter(
@@ -72,7 +71,7 @@ def obter_relatorios():
         ).group_by(Medico.id, Medico.crm).all()
         
         medicos_list = []
-        for medico_id, crm, total, nome in consultas_por_medico:
+        for medico_id, crm, total in consultas_por_medico:
             medico = Medico.query.get(medico_id)
             medicos_list.append({
                 'id': medico_id,

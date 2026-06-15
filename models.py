@@ -198,7 +198,7 @@ class Consulta(db.Model):
     
     # Campos de Prontuário expandido
     queixa_principal = db.Column(db.Text, nullable=True)
-    historia_molesita_atual = db.Column(db.Text, nullable=True)
+    historia_molestia_atual = db.Column(db.Text, nullable=True)
     antecedentes_pessoais = db.Column(db.Text, nullable=True)
     antecedentes_familiares = db.Column(db.Text, nullable=True)
     exame_fisico = db.Column(db.Text, nullable=True)
@@ -206,7 +206,7 @@ class Consulta(db.Model):
     plano_terapeutico = db.Column(db.Text, nullable=True)
     observacoes_consulta = db.Column(db.Text, nullable=True)
     tipo_consulta = db.Column(db.String(50), nullable=True)  # '1ª Consulta', 'Retorno', 'Urgência'
-    conveniio = db.Column(db.String(100), nullable=True)
+    convenio = db.Column(db.String(100), nullable=True)
     
     # Relações
     paciente = db.relationship('Paciente', backref='consultas')
@@ -408,7 +408,7 @@ class Receita(db.Model):
     descricao = db.Column(db.String(255), nullable=False)
     valor = db.Column(db.Float, nullable=False)
     tipo = db.Column(db.String(50), nullable=False)  # 'Particular', 'Convênio', etc
-    conveniio = db.Column(db.String(100), nullable=True)
+    convenio = db.Column(db.String(100), nullable=True)
     data_receita = db.Column(db.DateTime, default=datetime.utcnow)
     data_pagamento = db.Column(db.DateTime, nullable=True)
     status = db.Column(db.String(20), default='PENDENTE')  # PENDENTE, PAGO, CANCELADO
@@ -427,7 +427,7 @@ class Receita(db.Model):
             'descricao': self.descricao,
             'valor': self.valor,
             'tipo': self.tipo,
-            'conveniio': self.conveniio,
+            'convenio': self.convenio,
             'data_receita': self.data_receita.isoformat() if self.data_receita else None,
             'data_pagamento': self.data_pagamento.isoformat() if self.data_pagamento else None,
             'status': self.status

@@ -158,7 +158,7 @@ def criar_receita():
             descricao=dados.get('descricao'),
             valor=dados.get('valor'),
             tipo=dados.get('tipo', 'Particular'),
-            conveniio=dados.get('conveniio'),
+            convenio=dados.get('convenio'),
             status=dados.get('status', 'PENDENTE')
         )
         

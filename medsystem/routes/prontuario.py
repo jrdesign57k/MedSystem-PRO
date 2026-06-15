@@ -28,7 +28,7 @@ def criar_prontuario():
         
         # Atualizar campos do prontuário na consulta
         consulta.queixa_principal = dados.get('queixa_principal')
-        consulta.historia_molesita_atual = dados.get('historia_molesita_atual')
+        consulta.historia_molestia_atual = dados.get('historia_molestia_atual')
         consulta.antecedentes_pessoais = dados.get('antecedentes_pessoais')
         consulta.antecedentes_familiares = dados.get('antecedentes_familiares')
         consulta.exame_fisico = dados.get('exame_fisico')
@@ -87,7 +87,7 @@ def obter_prontuario(id_consulta):
                 'medico': consulta.medico.usuario.nome if (consulta.medico and consulta.medico.usuario) else '',
                 'data': consulta.data_consulta.strftime('%d/%m/%Y') if consulta.data_consulta else '',
                 'queixa_principal': consulta.queixa_principal,
-                'historia_molesita_atual': consulta.historia_molesita_atual,
+                'historia_molestia_atual': consulta.historia_molestia_atual,
                 'antecedentes_pessoais': consulta.antecedentes_pessoais,
                 'antecedentes_familiares': consulta.antecedentes_familiares,
                 'exame_fisico': consulta.exame_fisico,
@@ -117,7 +117,7 @@ def atualizar_prontuario(id_consulta):
             return jsonify({'sucesso': False, 'erro': 'Consulta não encontrada'}), 404
         
         consulta.queixa_principal = dados.get('queixa_principal', consulta.queixa_principal)
-        consulta.historia_molesita_atual = dados.get('historia_molesita_atual', consulta.historia_molesita_atual)
+        consulta.historia_molestia_atual = dados.get('historia_molestia_atual', consulta.historia_molestia_atual)
         consulta.antecedentes_pessoais = dados.get('antecedentes_pessoais', consulta.antecedentes_pessoais)
         consulta.antecedentes_familiares = dados.get('antecedentes_familiares', consulta.antecedentes_familiares)
         consulta.exame_fisico = dados.get('exame_fisico', consulta.exame_fisico)

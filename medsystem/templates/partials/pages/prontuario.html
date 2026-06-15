@@ -1,0 +1,83 @@
+<div id="page-prontuario" class="page">
+  <div class="page-header">
+    <div><div class="page-title">Prontuário Eletrônico</div><div class="page-sub">Consulta #0016 · Carlos Alberto · 07/05/2025</div></div>
+    <div class="header-actions">
+      <button class="btn btn-outline btn-sm">Imprimir</button>
+      <button class="btn btn-success" onclick="showToast('Prontuário salvo com sucesso!','success')">
+        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Salvar
+      </button>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div>
+      <div class="card mb16">
+        <div class="card-header"><span class="card-title">Anamnese</span></div>
+        <div class="card-body">
+          <div class="form-group mb16"><label>Queixa Principal <span class="req">*</span></label><input value="Febre há 3 dias e tosse seca persistente"/></div>
+          <div class="form-group mb16"><label>História da Moléstia Atual</label><textarea style="min-height:90px">Paciente relata febre entre 38-39°C, mais intensa à tarde. Tosse seca sem expectoração. Nega dispneia. Nega coriza. Fez uso de Dipirona com alívio parcial.</textarea></div>
+          <div class="form-group mb16"><label>Antecedentes Pessoais</label><input value="Sem comorbidades prévias. Vacinação COVID em dia."/></div>
+          <div class="form-group"><label>Antecedentes Familiares</label><input value="Pai: HAS. Mãe: DM2."/></div>
+        </div>
+      </div>
+
+      <div class="card mb16">
+        <div class="card-header"><span class="card-title">Exame Físico</span></div>
+        <div class="card-body">
+          <div class="vitals-grid" style="margin-bottom:14px">
+            <div class="vital-item vital-alert"><div class="vital-label">Temperatura</div><div class="vital-val">38.4</div><div class="vital-unit">°C</div></div>
+            <div class="vital-item vital-ok"><div class="vital-label">FC</div><div class="vital-val">88</div><div class="vital-unit">bpm</div></div>
+            <div class="vital-item vital-ok"><div class="vital-label">FR</div><div class="vital-val">18</div><div class="vital-unit">rpm</div></div>
+            <div class="vital-item vital-ok"><div class="vital-label">PA</div><div class="vital-val">120/80</div><div class="vital-unit">mmHg</div></div>
+            <div class="vital-item vital-ok"><div class="vital-label">SpO2</div><div class="vital-val">97</div><div class="vital-unit">%</div></div>
+            <div class="vital-item vital-norm"><div class="vital-label">Peso</div><div class="vital-val">74</div><div class="vital-unit">kg</div></div>
+          </div>
+          <div class="form-group"><label>Ausculta Pulmonar</label><input value="MV presente bilateralmente, sem ruídos adventícios."/></div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card mb16">
+        <div class="card-header"><span class="card-title">Diagnóstico / CID-10</span></div>
+        <div class="card-body">
+          <div style="border-left:4px solid var(--amber-light);padding:12px 16px;border-radius:0 8px 8px 0;background:var(--amber-bg);margin-bottom:12px">
+            <div class="td-mono text-xs text-3">J06.9</div>
+            <div style="font-weight:600;margin:4px 0">Infecção aguda das vias aéreas superiores</div>
+            <span class="badge badge-amber">Moderada</span>
+          </div>
+          <div class="form-group mb16"><label>Hipótese Diagnóstica</label><input value="Síndrome gripal — provável origem viral"/></div>
+          <div class="form-group"><label>Plano Terapêutico</label><textarea style="min-height:80px">Repouso e hidratação adequada. Dipirona 500mg de 6/6h se febre > 37,8°C. Azitromicina 500mg 1x/dia por 5 dias (cobertura bacteriana). Retorno em 7 dias ou antes se piora.</textarea></div>
+        </div>
+      </div>
+
+      <div class="card mb16">
+        <div class="card-header"><span class="card-title">Exames Solicitados</span><button class="btn btn-ghost btn-sm">+ Adicionar</button></div>
+        <div class="card-body">
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            <div class="chip"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:var(--text3);fill:none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg>Hemograma completo</div>
+            <div class="chip"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:var(--text3);fill:none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg>PCR</div>
+            <div class="chip"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:var(--text3);fill:none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg>Rx Tórax</div>
+            <div class="chip"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:var(--text3);fill:none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg>Teste rápido Influenza</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">Assinatura Digital</span></div>
+        <div class="card-body">
+          <div style="background:var(--surface2);border:1.5px dashed var(--border2);border-radius:8px;padding:18px;text-align:center;margin-bottom:12px">
+            <div style="font-size:22px;font-family:var(--serif);font-style:italic;color:var(--text2)">Dr. Carlos Mendonça</div>
+            <div class="text-xs text-3 mt16">CRM 12345 · Clínica Geral</div>
+          </div>
+          <div class="flex-end">
+            <button class="btn btn-outline btn-sm">Certificado Digital</button>
+            <button class="btn btn-primary btn-sm" onclick="showToast('Prontuário assinado e enviado ao CFM!','success')">Assinar Documento</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ PRESCRIÇÕES ═══════════════════════════════════ -->

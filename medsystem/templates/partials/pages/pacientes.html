@@ -1,0 +1,108 @@
+<div id="page-pacientes" class="page">
+  <div class="page-header">
+    <div><div class="page-title">Pacientes</div><div class="page-sub">Lista e fichas dos pacientes cadastrados</div></div>
+    <div class="header-actions">
+      <button class="btn btn-primary" onclick="showPage('novo_paciente')">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>Novo Paciente
+      </button>
+    </div>
+  </div>
+
+  <div class="card mb16">
+    <div class="card-header"><span class="card-title">Pacientes Cadastrados</span></div>
+    <div class="table-wrap">
+      <table id="tabela-pacientes">
+        <thead><tr><th>Nome</th><th>CPF</th><th>Nascimento</th><th>Telefone</th><th>Ações</th></tr></thead>
+        <tbody><tr><td colspan="5" style="text-align:center;color:#999;">Carregando...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="ficha-paciente-demo" style="display:none">
+    <!-- Dados -->
+    <div>
+      <div class="patient-card mb16">
+        <div class="patient-header">
+          <div class="patient-avatar-lg">JS</div>
+          <div class="patient-name">Paciente</div>
+          <div class="patient-meta"><span>44 anos · Masculino</span><span>O+ · ID #0001</span></div>
+        </div>
+        <div class="patient-body">
+          <div class="info-row"><span class="info-key">CPF</span><span class="info-val td-mono">111.222.333-01</span></div>
+          <div class="info-row"><span class="info-key">Nascimento</span><span class="info-val">15/04/1980</span></div>
+          <div class="info-row"><span class="info-key">Telefone</span><span class="info-val">(34) 98001-0001</span></div>
+          <div class="info-row"><span class="info-key">E-mail</span><span class="info-val">joao@email.com</span></div>
+          <div class="info-row"><span class="info-key">Convênio</span><span class="info-val"><span class="badge badge-blue">Unimed</span></span></div>
+          <div class="info-row"><span class="info-key">Tipo Sanguíneo</span><span class="info-val"><span class="badge badge-red">O+</span></span></div>
+          <div class="info-row"><span class="info-key">Alergias</span><span class="info-val"><span class="allergy-tag">⚠ Penicilina</span></span></div>
+          <div class="info-row"><span class="info-key">Comorbidades</span><span class="info-val"><span class="tag" style="background:var(--amber-pale);color:var(--amber)">Pré-diabetes</span></span></div>
+          <div class="info-row"><span class="info-key">Cadastro</span><span class="info-val td-mono">10/03/2025</span></div>
+        </div>
+      </div>
+
+      <div class="card mb16">
+        <div class="card-header"><span class="card-title">Sinais Vitais — Última Consulta</span><span class="text-xs text-3">10/03/2025</span></div>
+        <div class="card-body">
+          <div class="vitals-grid">
+            <div class="vital-item vital-ok"><div class="vital-label">FC</div><div class="vital-val">72</div><div class="vital-unit">bpm</div></div>
+            <div class="vital-item vital-warn"><div class="vital-label">PA Sist.</div><div class="vital-val">138</div><div class="vital-unit">mmHg</div></div>
+            <div class="vital-item vital-warn"><div class="vital-label">PA Diast.</div><div class="vital-val">88</div><div class="vital-unit">mmHg</div></div>
+            <div class="vital-item vital-ok"><div class="vital-label">Temp.</div><div class="vital-val">36.4</div><div class="vital-unit">°C</div></div>
+            <div class="vital-item vital-ok"><div class="vital-label">SpO2</div><div class="vital-val">98</div><div class="vital-unit">%</div></div>
+            <div class="vital-item vital-norm"><div class="vital-label">Peso</div><div class="vital-val">82</div><div class="vital-unit">kg</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Histórico -->
+    <div>
+      <div class="card mb16">
+        <div class="card-header"><span class="card-title">Histórico Clínico</span></div>
+        <div class="card-body">
+          <ul class="timeline">
+            <li class="tl-item">
+              <div class="tl-dot amber"><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+              <div class="tl-content">
+                <div class="tl-title">Glicemia 105 mg/dL <span class="badge badge-amber" style="margin-left:6px">Atenção</span></div>
+                <div class="tl-body">Pré-diabetes identificado. Orientação nutricional e atividade física indicadas.</div>
+                <div class="tl-date">10/03/2025 · Dr. Carlos Mendonça</div>
+              </div>
+            </li>
+            <li class="tl-item">
+              <div class="tl-dot blue"><svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg></div>
+              <div class="tl-content">
+                <div class="tl-title">Consulta: Cefaleia e fadiga</div>
+                <div class="tl-body">PA controlada. Solicitado exame de glicemia em jejum. Prescrito Ibuprofeno 400mg.</div>
+                <div class="tl-date">10/03/2025 · Dr. Carlos Mendonça</div>
+              </div>
+            </li>
+            <li class="tl-item">
+              <div class="tl-dot green"><svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></div>
+              <div class="tl-content">
+                <div class="tl-title">Hemograma completo — Normal</div>
+                <div class="tl-body">Hb 14.2, Leucócitos 7200, Plaquetas 245.000. Sem alterações.</div>
+                <div class="tl-date">15/01/2025 · Lab. Central</div>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card mb16">
+        <div class="card-header"><span class="card-title">Medicamentos em Uso</span><button class="btn btn-ghost btn-sm" onclick="showPage('prescricoes')">+ Adicionar</button></div>
+        <div class="card-body" style="padding-top:10px">
+          <div class="rx-item">
+            <div><div class="rx-drug">Ibuprofeno</div><div class="rx-dose">400 mg</div><div class="rx-posol">1 comp. de 8/8h com alimento</div><div class="rx-dur">7 dias — prescrito 10/03/2025</div></div>
+            <span class="badge badge-green">Ativo</span>
+          </div>
+          <div class="rx-item">
+            <div><div class="rx-drug">Metformina</div><div class="rx-dose">500 mg</div><div class="rx-posol">1 comp. 2x ao dia com refeições</div><div class="rx-dur">Uso contínuo — prescrito 10/03/2025</div></div>
+            <span class="badge badge-green">Ativo</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div><!-- /ficha-paciente-demo -->
+</div>

@@ -1,0 +1,26 @@
+<div id="page-consultas" class="page">
+  <div class="page-header">
+    <div><div class="page-title">Consultas</div><div class="page-sub">Histórico e agendamentos</div></div>
+    <div class="header-actions">
+      <div class="search-bar">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input placeholder="Buscar..." oninput="filtrarTabela('tabela-consultas',this.value)"/>
+      </div>
+      <button class="btn btn-primary" onclick="openModal('modal-consulta')">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>Nova
+      </button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="table-wrap">
+      <table id="tabela-consultas">
+        <thead><tr><th>#</th><th>Paciente</th><th>Data / Hora</th><th>Médico</th><th>Motivo</th><th>Status</th><th>Ações</th></tr></thead>
+        <tbody>
+          <tr><td colspan="7" style="text-align:center;color:#999;">Carregando consultas...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ PACIENTES ═══════════════════════════════════ -->

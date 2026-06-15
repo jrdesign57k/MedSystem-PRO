@@ -1,0 +1,63 @@
+<div id="page-financeiro" class="page">
+  <div class="page-header">
+    <div><div class="page-title">Gestão Financeira</div><div class="page-sub">Faturamento, receitas e despesas</div></div>
+    <div class="header-actions">
+      <button class="btn btn-primary" onclick="showToast('Exportando relatório financeiro...','info')">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Exportar
+      </button>
+    </div>
+  </div>
+
+  <div class="stats-grid mb16">
+    <div class="stat-card green"><div class="stat-label">Receita Mensal</div><div class="stat-value">R$18.4k</div><div class="stat-delta up">↑ 14% vs abr</div></div>
+    <div class="stat-card blue"><div class="stat-label">Consultas Pagas</div><div class="stat-value">62</div><div class="stat-delta up">Mês atual</div></div>
+    <div class="stat-card amber"><div class="stat-label">A Receber</div><div class="stat-value">R$3.2k</div><div class="stat-delta warn">8 pendências</div></div>
+    <div class="stat-card red"><div class="stat-label">Despesas</div><div class="stat-value">R$6.1k</div><div class="stat-delta down">Fixas + variáveis</div></div>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Receita por Categoria — Mai/25</span></div>
+      <div class="card-body">
+        <div style="margin-bottom:14px">
+          <div class="flex-bet text-sm mb16"><span style="font-weight:600">Consultas Particulares</span><span style="font-weight:700">R$ 11.200</span></div>
+          <div class="finance-bar"><div class="finance-fill" style="width:61%;background:linear-gradient(90deg,var(--blue),var(--blue-light))"></div></div>
+          <div class="text-xs text-3" style="margin-top:4px">61% do total</div>
+        </div>
+        <div style="margin-bottom:14px">
+          <div class="flex-bet text-sm mb16"><span style="font-weight:600">Convênio Unimed</span><span style="font-weight:700">R$ 5.100</span></div>
+          <div class="finance-bar"><div class="finance-fill" style="width:28%;background:linear-gradient(90deg,var(--teal),var(--teal-light))"></div></div>
+          <div class="text-xs text-3" style="margin-top:4px">28% do total</div>
+        </div>
+        <div style="margin-bottom:14px">
+          <div class="flex-bet text-sm mb16"><span style="font-weight:600">Convênio SulAmérica</span><span style="font-weight:700">R$ 2.100</span></div>
+          <div class="finance-bar"><div class="finance-fill" style="width:11%;background:linear-gradient(90deg,var(--purple),var(--purple-light))"></div></div>
+          <div class="text-xs text-3" style="margin-top:4px">11% do total</div>
+        </div>
+        <div class="divider"></div>
+        <div class="flex-bet">
+          <span style="font-weight:700">Total</span>
+          <span style="font-weight:700;font-size:16px;color:var(--green-light)">R$ 18.400</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="card-title">Lançamentos Recentes</span></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Data</th><th>Descrição</th><th>Tipo</th><th>Valor</th></tr></thead>
+          <tbody>
+            <tr><td class="td-mono">10/05</td><td>Consulta particular – Roberto N.</td><td><span class="badge badge-green">Entrada</span></td><td style="font-weight:700;color:var(--green-light)">+R$250</td></tr>
+            <tr><td class="td-mono">09/05</td><td>Glória Lima – Convênio</td><td><span class="badge badge-blue">Convênio</span></td><td style="font-weight:700;color:var(--teal-light)">+R$120</td></tr>
+            <tr><td class="td-mono">08/05</td><td>Aluguel consultório</td><td><span class="badge badge-red">Saída</span></td><td style="font-weight:700;color:var(--red-light)">-R$2.800</td></tr>
+            <tr><td class="td-mono">07/05</td><td>Material escritório</td><td><span class="badge badge-red">Saída</span></td><td style="font-weight:700;color:var(--red-light)">-R$180</td></tr>
+            <tr><td class="td-mono">06/05</td><td>4 consultas particulares</td><td><span class="badge badge-green">Entrada</span></td><td style="font-weight:700;color:var(--green-light)">+R$1.000</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ RELATÓRIOS ═══════════════════════════════════ -->

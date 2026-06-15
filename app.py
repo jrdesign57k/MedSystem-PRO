@@ -133,41 +133,11 @@ def create_app():
             print(f"⚠️ Erro silencioso no banco (tabelas já existem ou ajuste pendente): {e}")
 
 
-    # ──── ROTAS DO FRONTEND (As telas do sistema) ────
+    # ──── ROTA DO FRONTEND (Versão única PRO) ────
     @app.route('/')
     def index():
-        """Interface principal PRO (protótipo integrado)"""
-        return render_template('index_pro.html')
-
-    @app.route('/classic')
-    def index_classic():
-        """Interface simplificada com integração parcial"""
+        """Interface única MedSystem PRO (modular, integrada ao backend)"""
         return render_template('index.html')
-
-    @app.route('/dashboard')
-    def dashboard():
-        """Dashboard legado com gráficos"""
-        return render_template('dashboard.html')
-
-    @app.route('/app/dashboard')
-    def app_dashboard():
-        """Dashboard interno com barra lateral"""
-        return render_template('app_dashboard.html', page='dashboard')
-
-    @app.route('/app/pacientes')
-    def app_pacientes():
-        """Listagem de pacientes"""
-        return render_template('app_pacientes.html', page='pacientes')
-
-    @app.route('/app/novo-paciente')
-    def app_novo_paciente():
-        """Formulário de novo paciente"""
-        return render_template('app_novo_paciente.html', page='novo-paciente')
-
-    @app.route('/app/paciente/<int:paciente_id>')
-    def app_ficha_paciente(paciente_id):
-        """Ficha detalhada de um paciente específico"""
-        return render_template('app_ficha_paciente.html', page='pacientes', paciente_id=paciente_id)
 
 
     # ──── HEALTH CHECK (Monitoramento do Servidor) ────

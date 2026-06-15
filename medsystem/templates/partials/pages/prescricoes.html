@@ -1,0 +1,70 @@
+<div id="page-prescricoes" class="page">
+  <div class="page-header">
+    <div><div class="page-title">Prescrições</div><div class="page-sub">Emissão e histórico de receituários</div></div>
+    <div class="header-actions">
+      <button class="btn btn-primary" onclick="openModal('modal-prescricao')">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>Nova Prescrição
+      </button>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Nova Prescrição</span></div>
+      <div class="card-body">
+        <div class="form-grid" style="margin-bottom:14px">
+          <div class="form-group"><label>Paciente <span class="req">*</span></label>
+            <select><option>João da Silva</option><option>Maria Oliveira</option><option>Carlos Alberto</option></select>
+          </div>
+          <div class="form-group"><label>Tipo de Receita</label>
+            <select><option>Simples</option><option>Controlada Azul</option><option>Controlada Amarela</option></select>
+          </div>
+        </div>
+
+        <div style="border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:14px">
+          <div style="background:var(--surface2);padding:10px 14px;font-size:12px;font-weight:700;color:var(--text2);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+            MEDICAMENTOS
+            <button class="btn btn-ghost btn-sm" onclick="addMed()">+ Adicionar</button>
+          </div>
+          <div style="padding:12px 14px" id="med-list">
+            <div class="rx-item" style="margin-bottom:8px">
+              <div style="flex:1">
+                <div class="form-grid-3" style="gap:8px">
+                  <div class="form-group"><label>Medicamento</label><input value="Ibuprofeno 400mg"/></div>
+                  <div class="form-group"><label>Posologia</label><input value="1 comp. 8/8h"/></div>
+                  <div class="form-group"><label>Duração</label><input value="7 dias"/></div>
+                </div>
+              </div>
+              <button class="btn btn-ghost btn-sm" style="color:var(--red-light);margin-top:18px">✕</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group mb16"><label>Observações / Orientações</label><textarea placeholder="Informações adicionais ao paciente...">Tomar com alimento para reduzir irritação gástrica. Evitar bebidas alcoólicas.</textarea></div>
+        <div class="flex-end">
+          <button class="btn btn-outline">Salvar Rascunho</button>
+          <button class="btn btn-success" onclick="showToast('Receita gerada e impressa!','success')">
+            <svg viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Gerar & Imprimir
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="card-title">Receituários Emitidos</span></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Paciente</th><th>Data</th><th>Medicamentos</th><th>Tipo</th></tr></thead>
+          <tbody>
+            <tr><td class="td-mono">#R014</td><td class="td-name">João da Silva</td><td class="td-mono">10/03/25</td><td>Ibuprofeno, Metformina</td><td><span class="badge badge-blue">Simples</span></td></tr>
+            <tr><td class="td-mono">#R013</td><td class="td-name">Maria Oliveira</td><td class="td-mono">12/03/25</td><td>Losartana 50mg</td><td><span class="badge badge-blue">Simples</span></td></tr>
+            <tr><td class="td-mono">#R012</td><td class="td-name">Roberto N.</td><td class="td-mono">15/02/25</td><td>Clonazepam 0,5mg</td><td><span class="badge badge-amber">C. Azul</span></td></tr>
+            <tr><td class="td-mono">#R011</td><td class="td-name">Carlos Alberto</td><td class="td-mono">07/05/25</td><td>Azitromicina 500mg</td><td><span class="badge badge-blue">Simples</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ EXAMES ═══════════════════════════════════ -->

@@ -1,0 +1,105 @@
+<div id="page-novo_paciente" class="page">
+  <div class="page-header">
+    <div><div class="page-title">Novo Paciente</div><div class="page-sub">Cadastro de paciente com validação automática</div></div>
+  </div>
+  <div class="two-col">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Dados Pessoais</span></div>
+      <div class="card-body">
+        <div class="form-grid">
+          <div class="form-group"><label>Nome completo <span class="req">*</span></label><input id="np-nome" placeholder="Nome Sobrenome"/></div>
+          <div class="form-group"><label>CPF <span class="req">*</span></label><input id="np-cpf" placeholder="000.000.000-00"/></div>
+          <div class="form-group"><label>Data de Nascimento <span class="req">*</span></label><input id="np-nasc" type="date"/></div>
+          <div class="form-group"><label>Sexo <span class="req">*</span></label>
+            <select id="np-sexo"><option value="M">Masculino</option><option value="F">Feminino</option><option value="O">Outro</option></select>
+          </div>
+          <div class="form-group"><label>Telefone</label><input id="np-tel" placeholder="(XX) 9XXXX-XXXX"/></div>
+          <div class="form-group"><label>E-mail</label><input id="np-email" placeholder="paciente@email.com"/></div>
+          <div class="form-group"><label>Tipo Sanguíneo</label>
+            <select id="np-sangue"><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option><option>O+</option><option>O-</option></select>
+          </div>
+          <div class="form-group"><label>Convênio</label>
+            <select><option>Particular</option><option>Unimed</option><option>SulAmérica</option><option>Bradesco Saúde</option><option>Amil</option></select>
+          </div>
+          <div class="form-group full"><label>Endereço</label><input id="np-end" placeholder="Rua, Nº, Bairro, Cidade — UF"/></div>
+          <div class="form-group full"><label>Alergias</label><input id="np-alerg" placeholder="Ex: Penicilina, Dipirona..."/></div>
+          <div class="form-group full"><label>Comorbidades</label><input placeholder="Ex: HAS, DM2, Asma..."/></div>
+          <div class="form-group full"><label>Observações Clínicas</label><textarea id="np-obs" placeholder="Histórico relevante, comorbidades, contexto clínico..."></textarea></div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <!-- Checklist de admissão -->
+      <div class="card mb16">
+        <div class="card-header">
+          <span class="card-title">Checklist de Admissão</span>
+          <span class="badge badge-amber" id="chk-count">0 / 6</span>
+        </div>
+        <div class="card-body" style="padding-top:12px">
+          <div style="display:flex;flex-direction:column;gap:10px" id="checklist-wrap">
+            <label class="chk-item" onclick="toggleChk(this)">
+              <div class="chk-box" style="width:20px;height:20px;border:2px solid var(--border2);border-radius:5px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:.15s;cursor:pointer"></div>
+              <div><div style="font-size:13px;font-weight:500;color:var(--text)">Documento de identidade verificado</div><div style="font-size:11.5px;color:var(--text3)">RG, CNH ou passaporte</div></div>
+            </label>
+            <label class="chk-item" onclick="toggleChk(this)">
+              <div class="chk-box" style="width:20px;height:20px;border:2px solid var(--border2);border-radius:5px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:.15s;cursor:pointer"></div>
+              <div><div style="font-size:13px;font-weight:500;color:var(--text)">Carteira do convênio / cartão SUS</div><div style="font-size:11.5px;color:var(--text3)">Fotografar e anexar ao cadastro</div></div>
+            </label>
+            <label class="chk-item" onclick="toggleChk(this)">
+              <div class="chk-box" style="width:20px;height:20px;border:2px solid var(--border2);border-radius:5px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:.15s;cursor:pointer"></div>
+              <div><div style="font-size:13px;font-weight:500;color:var(--text)">Termo de consentimento assinado</div><div style="font-size:11.5px;color:var(--text3)">LGPD — autorização de uso de dados de saúde</div></div>
+            </label>
+            <label class="chk-item" onclick="toggleChk(this)">
+              <div class="chk-box" style="width:20px;height:20px;border:2px solid var(--border2);border-radius:5px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:.15s;cursor:pointer"></div>
+              <div><div style="font-size:13px;font-weight:500;color:var(--text)">Alergias informadas e registradas</div><div style="font-size:11.5px;color:var(--text3)">Medicamentos, alimentos e materiais</div></div>
+            </label>
+            <label class="chk-item" onclick="toggleChk(this)">
+              <div class="chk-box" style="width:20px;height:20px;border:2px solid var(--border2);border-radius:5px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:.15s;cursor:pointer"></div>
+              <div><div style="font-size:13px;font-weight:500;color:var(--text)">Contato de emergência cadastrado</div><div style="font-size:11.5px;color:var(--text3)">Nome, parentesco e telefone</div></div>
+            </label>
+            <label class="chk-item" onclick="toggleChk(this)">
+              <div class="chk-box" style="width:20px;height:20px;border:2px solid var(--border2);border-radius:5px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:.15s;cursor:pointer"></div>
+              <div><div style="font-size:13px;font-weight:500;color:var(--text)">1ª consulta agendada</div><div style="font-size:11.5px;color:var(--text3)">Data e médico responsável definidos</div></div>
+            </label>
+          </div>
+          <div id="chk-progress" style="margin-top:14px">
+            <div class="finance-bar"><div class="finance-fill" id="chk-bar" style="width:0%;background:linear-gradient(90deg,var(--green),var(--green-light));transition:width .4s ease"></div></div>
+            <div style="font-size:11px;color:var(--text3);margin-top:5px" id="chk-label">Complete o checklist para habilitar o cadastro</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Últimos cadastros -->
+      <div class="card mb16">
+        <div class="card-header"><span class="card-title">Últimos Cadastros</span><span class="text-xs text-3">Esta semana</span></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Paciente</th><th>Cadastro</th><th>Convênio</th><th>Status</th></tr></thead>
+            <tbody id="cadastros-recentes">
+              <tr><td class="td-name">Fernanda Costa</td><td class="td-mono">08/05/25</td><td><span class="badge badge-blue">Unimed</span></td><td><span class="badge badge-green">Ativo</span></td></tr>
+              <tr><td class="td-name">Ricardo Fonseca</td><td class="td-mono">07/05/25</td><td><span class="badge badge-gray">Particular</span></td><td><span class="badge badge-green">Ativo</span></td></tr>
+              <tr><td class="td-name">Ana Beatriz Lima</td><td class="td-mono">06/05/25</td><td><span class="badge badge-purple">Amil</span></td><td><span class="badge badge-green">Ativo</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Ações -->
+      <div class="card">
+        <div class="card-header"><span class="card-title">Ações</span></div>
+        <div class="card-body">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <button class="btn btn-primary w-full" onclick="cadastrarPaciente()">
+              <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Salvar e Cadastrar Paciente
+            </button>
+            <button class="btn btn-outline w-full" onclick="showToast('Rascunho salvo localmente.','info')">
+              <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Salvar Rascunho
+            </button>
+            <button class="btn btn-ghost w-full" onclick="limparForm()">Limpar Formulário</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

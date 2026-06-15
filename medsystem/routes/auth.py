@@ -1,7 +1,7 @@
 """
 MedSystem Auth Routes - Autenticação e Login
 """
-from flask import Blueprint, request, jsonify, render_template
+from flask import Blueprint, request, jsonify, redirect
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from extensions import db
 from models import Usuario, Medico, LogAuditoria
@@ -21,10 +21,7 @@ def validar_senha_forte(senha):
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'GET':
-        try:
-            return render_template('login.html')
-        except Exception as e:
-            return jsonify({'sucesso': False, 'mensagem': f'Erro ao carregar página: {str(e)}'}), 500
+        return redirect('/')
 
     try:
         dados = request.get_json()

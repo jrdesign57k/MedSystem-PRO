@@ -1,0 +1,62 @@
+<!-- ═══════════════ MODAL: Nova Consulta ═══════════════ -->
+<div class="modal-overlay" id="modal-consulta" onclick="if(event.target===this)closeModal('modal-consulta')">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Agendar Consulta</span>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-consulta')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group"><label>Paciente <span class="req">*</span></label>
+          <select id="nc-pac"><option value="">Carregando pacientes...</option></select>
+        </div>
+        <div class="form-group"><label>Médico <span class="req">*</span></label>
+          <select id="nc-med"><option value="">Carregando médicos...</option></select>
+        </div>
+        <div class="form-group"><label>Data <span class="req">*</span></label><input id="nc-data" type="date"/></div>
+        <div class="form-group"><label>Hora <span class="req">*</span></label><input id="nc-hora" type="time" value="09:00"/></div>
+        <div class="form-group"><label>Tipo de Consulta</label>
+          <select id="nc-tipo"><option>1ª Consulta</option><option>Retorno</option><option>Urgência</option><option>Exame</option></select>
+        </div>
+        <div class="form-group"><label>Convênio</label>
+          <select id="nc-convenio"><option>Particular</option><option>Unimed</option><option>SulAmérica</option></select>
+        </div>
+        <div class="form-group full"><label>Motivo / Queixa Principal <span class="req">*</span></label><input id="nc-motivo" placeholder="Descreva brevemente o motivo da consulta"/></div>
+        <div class="form-group full"><label>Observações</label><textarea id="nc-obs" placeholder="Informações adicionais..." style="min-height:60px"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-consulta')">Cancelar</button>
+      <button class="btn btn-primary" onclick="agendarConsultaModal()">
+        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Confirmar Agendamento
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ MODAL: Nova Prescrição ═══════════════ -->
+<div class="modal-overlay" id="modal-prescricao" onclick="if(event.target===this)closeModal('modal-prescricao')">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Nova Prescrição</span>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-prescricao')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid mb16">
+        <div class="form-group"><label>Paciente</label><select><option>Selecionar...</option><option>João da Silva</option><option>Maria Oliveira</option></select></div>
+        <div class="form-group"><label>Tipo de Receita</label><select><option>Simples</option><option>Controlada Azul</option></select></div>
+        <div class="form-group"><label>Medicamento</label><input placeholder="Nome do medicamento + dosagem"/></div>
+        <div class="form-group"><label>Posologia</label><input placeholder="Ex: 1 comp. 8/8h"/></div>
+        <div class="form-group"><label>Duração</label><input placeholder="Ex: 7 dias"/></div>
+        <div class="form-group"><label>Quantidade</label><input placeholder="Ex: 21 comprimidos"/></div>
+        <div class="form-group full"><label>Orientações ao Paciente</label><textarea style="min-height:60px" placeholder="Tome com água, evite álcool..."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-prescricao')">Cancelar</button>
+      <button class="btn btn-success" onclick="closeModal('modal-prescricao');showToast('Receita emitida com sucesso!','success')">
+        <svg viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Emitir Receita
+      </button>
+    </div>
+  </div>
+</div>

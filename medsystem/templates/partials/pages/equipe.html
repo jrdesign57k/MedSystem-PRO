@@ -1,0 +1,59 @@
+<div id="page-equipe" class="page">
+  <div class="page-header">
+    <div><div class="page-title">Equipe Médica</div><div class="page-sub">Gestão de colaboradores e agenda</div></div>
+    <div class="header-actions">
+      <button class="btn btn-primary" onclick="showToast('Formulário de novo profissional aberto','info')">+ Novo Profissional</button>
+    </div>
+  </div>
+  <div class="card mb16">
+    <div class="table-wrap">
+      <table id="tabela-equipe">
+        <thead><tr><th>Nome</th><th>CRM</th><th>Especialidade</th><th>Status</th></tr></thead>
+        <tbody><tr><td colspan="4" style="text-align:center;color:#999;">Carregando equipe...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="three-col" style="display:none">
+    <div class="card">
+      <div class="patient-header" style="background:linear-gradient(135deg,#1a56db,#1e3a8a)">
+        <div class="patient-avatar-lg">DM</div>
+        <div class="patient-name">Dr. Carlos Mendonça</div>
+        <div class="patient-meta"><span>Clínico Geral</span><span>CRM 12345</span></div>
+      </div>
+      <div class="patient-body">
+        <div class="info-row"><span class="info-key">Especialidade</span><span class="info-val">Clínica Geral</span></div>
+        <div class="info-row"><span class="info-key">Status</span><span class="info-val"><span class="badge badge-green">Online</span></span></div>
+        <div class="info-row"><span class="info-key">Consultas mês</span><span class="info-val" style="font-weight:700">28</span></div>
+        <div class="info-row"><span class="info-key">Próxima agenda</span><span class="info-val td-mono">Hoje 11:00</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="patient-header" style="background:linear-gradient(135deg,var(--green),var(--green-light))">
+        <div class="patient-avatar-lg">AF</div>
+        <div class="patient-name">Dra. Ana Ferreira</div>
+        <div class="patient-meta"><span>Cardiologia</span><span>CRM 67890</span></div>
+      </div>
+      <div class="patient-body">
+        <div class="info-row"><span class="info-key">Especialidade</span><span class="info-val">Cardiologia</span></div>
+        <div class="info-row"><span class="info-key">Status</span><span class="info-val"><span class="badge badge-green">Online</span></span></div>
+        <div class="info-row"><span class="info-key">Consultas mês</span><span class="info-val" style="font-weight:700">22</span></div>
+        <div class="info-row"><span class="info-key">Próxima agenda</span><span class="info-val td-mono">Hoje 14:30</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="patient-header" style="background:linear-gradient(135deg,var(--purple),var(--purple-light))">
+        <div class="patient-avatar-lg">BL</div>
+        <div class="patient-name">Dra. Beatriz Lima</div>
+        <div class="patient-meta"><span>Endocrinologia</span><span>CRM 44321</span></div>
+      </div>
+      <div class="patient-body">
+        <div class="info-row"><span class="info-key">Especialidade</span><span class="info-val">Endocrinologia</span></div>
+        <div class="info-row"><span class="info-key">Status</span><span class="info-val"><span class="badge badge-amber">Em consulta</span></span></div>
+        <div class="info-row"><span class="info-key">Consultas mês</span><span class="info-val" style="font-weight:700">12</span></div>
+        <div class="info-row"><span class="info-key">Próxima agenda</span><span class="info-val td-mono">Amanhã 08:00</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ MENSAGENS ═══════════════════════════════════ -->

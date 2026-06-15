@@ -1,0 +1,69 @@
+<div id="page-agenda" class="page">
+  <div class="page-header">
+    <div><div class="page-title">Agenda Semanal</div><div class="page-sub">Semana de 26/05 a 30/05/2025</div></div>
+    <div class="header-actions">
+      <button class="btn btn-outline btn-sm">← Anterior</button>
+      <button class="btn btn-outline btn-sm">Hoje</button>
+      <button class="btn btn-outline btn-sm">Próxima →</button>
+      <button class="btn btn-primary" onclick="openModal('modal-consulta')">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>Agendar
+      </button>
+    </div>
+  </div>
+
+  <!-- Mini stats da semana -->
+  <div class="four-col mb16">
+    <div class="stat-card blue"><div class="stat-label">Consultas semana</div><div class="stat-value">24</div><div class="stat-delta up">↑ 4 vs semana ant.</div></div>
+    <div class="stat-card green"><div class="stat-label">Confirmadas</div><div class="stat-value">18</div><div class="stat-delta up">75% do total</div></div>
+    <div class="stat-card amber"><div class="stat-label">Aguardando confirm.</div><div class="stat-value">5</div><div class="stat-delta warn">Enviar lembretes</div></div>
+    <div class="stat-card red"><div class="stat-label">Canceladas</div><div class="stat-value">1</div><div class="stat-delta down">Reagendar</div></div>
+  </div>
+
+  <div class="card mb16">
+    <div class="agenda-grid">
+      <div class="agenda-cell agenda-head"></div>
+      <div class="agenda-cell agenda-head">Seg 26</div>
+      <div class="agenda-cell agenda-head">Ter 27</div>
+      <div class="agenda-cell agenda-head">Qua 28</div>
+      <div class="agenda-cell agenda-head today">Qui 29 ●</div>
+      <div class="agenda-cell agenda-head">Sex 30</div>
+
+      <div class="agenda-cell agenda-time">08:00</div>
+      <div class="agenda-cell"><div class="appt green"><div class="appt-name">Maria O.</div><div class="appt-info">Retorno HAS</div></div></div>
+      <div class="agenda-cell"></div>
+      <div class="agenda-cell"><div class="appt amber"><div class="appt-name">Pedro A.</div><div class="appt-info">1ª Consulta</div></div></div>
+      <div class="agenda-cell"><div class="appt green"><div class="appt-name">Carlos A.</div><div class="appt-info">Retorno</div></div></div>
+      <div class="agenda-cell"><div class="appt"><div class="appt-name">Lucia M.</div><div class="appt-info">Check-up</div></div></div>
+
+      <div class="agenda-cell agenda-time">09:30</div>
+      <div class="agenda-cell"><div class="appt"><div class="appt-name">João S.</div><div class="appt-info">Glicemia</div></div></div>
+      <div class="agenda-cell"><div class="appt purple"><div class="appt-name">Sandra R.</div><div class="appt-info">Psiquiatria</div></div></div>
+      <div class="agenda-cell"></div>
+      <div class="agenda-cell"><div class="appt"><div class="appt-name">Fernanda C.</div><div class="appt-info">1ª Consulta</div></div></div>
+      <div class="agenda-cell"><div class="appt green"><div class="appt-name">Carlos A.</div><div class="appt-info">ECG</div></div></div>
+
+      <div class="agenda-cell agenda-time">11:00</div>
+      <div class="agenda-cell"></div>
+      <div class="agenda-cell"><div class="appt amber"><div class="appt-name">Roberto N.</div><div class="appt-info">PA alta</div></div></div>
+      <div class="agenda-cell"><div class="appt green"><div class="appt-name">Tereza F.</div><div class="appt-info">Retorno</div></div></div>
+      <div class="agenda-cell"><div class="appt red"><div class="appt-name">Roberto N.</div><div class="appt-info">URGÊNCIA</div></div></div>
+      <div class="agenda-cell"></div>
+
+      <div class="agenda-cell agenda-time">14:00</div>
+      <div class="agenda-cell"><div class="appt purple"><div class="appt-name">Ana B.</div><div class="appt-info">Pré-natal</div></div></div>
+      <div class="agenda-cell"><div class="appt"><div class="appt-name">Miguel L.</div><div class="appt-info">Exames</div></div></div>
+      <div class="agenda-cell"><div class="appt green"><div class="appt-name">Paulo K.</div><div class="appt-info">Retorno</div></div></div>
+      <div class="agenda-cell"><div class="appt"><div class="appt-name">Maria O.</div><div class="appt-info">Exame</div></div></div>
+      <div class="agenda-cell"><div class="appt amber"><div class="appt-name">Fabio S.</div><div class="appt-info">Check-up</div></div></div>
+
+      <div class="agenda-cell agenda-time">15:30</div>
+      <div class="agenda-cell"></div>
+      <div class="agenda-cell"><div class="appt green"><div class="appt-name">Clara N.</div><div class="appt-info">1ª Consulta</div></div></div>
+      <div class="agenda-cell"><div class="appt"><div class="appt-name">Marcos W.</div><div class="appt-info">Retorno</div></div></div>
+      <div class="agenda-cell"><div class="appt"><div class="appt-name">João S.</div><div class="appt-info">Retorno</div></div></div>
+      <div class="agenda-cell"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ CONSULTAS ═══════════════════════════════════ -->

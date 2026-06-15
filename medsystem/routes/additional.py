@@ -4,7 +4,6 @@ MedSystem Additional Routes - Exames e Dashboard
 
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from sqlalchemy.orm import load_only
 from app import db
 from models import Exame, TipoExame, Consulta, Paciente, LogAuditoria, Diagnostico, Medico
 from datetime import datetime, timedelta
@@ -274,26 +273,19 @@ def agenda_semanal():
             inicio = datetime(dia.year, dia.month, dia.day)
             fim = inicio + timedelta(days=1)
 
-            consultas = Consulta.query.options(
-                load_only(
-                    Consulta.id_consulta,
-                    Consulta.id_paciente,
-                    Consulta.data_consulta,
-                    Consulta.status,
-                    Consulta.motivo
-                )
-            ).filter(
+            consultas = Consulta.query.filter(
                 Consulta.data_consulta >= inicio,
                 Consulta.data_consulta < fim
             ).all()
 
             consultas_list = []
             for c in consultas:
-                hora = c.data_consulta.strftime('%H:%M') if c.data_consulta else '08:00'
+                hora = (c.hora_consulta or
+                        (c.data_consulta.strftime('%H:%M') if c.data_consulta else '08:00'))[:5]
                 consultas_list.append({
                     'hora': hora,
                     'paciente': c.paciente.nome if c.paciente else 'Paciente',
-                    'motivo': c.motivo or 'Consulta',
+                    'motivo': c.motivo or c.tipo_consulta or 'Consulta',
                     'status': c.status or 'AGENDADA'
                 })
 
