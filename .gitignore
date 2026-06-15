@@ -45,6 +45,9 @@ Thumbs.db
 *.sqlite3
 instance/
 
+# Banco de dados (mantido apenas localmente, enviado via SSH no deploy)
+medsystem/database/*.sql
+
 .flaskenv
 *.log
 
