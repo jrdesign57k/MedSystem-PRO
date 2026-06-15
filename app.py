@@ -1,27 +1,40 @@
 """
-MedSystem - Backend Principal (API REST Pura)
+MedSystem - Backend Principal Integrado (API + Frontend)
 """
-from flask import Flask, jsonify
+from flask import Flask, render_template, jsonify
 from flask_cors import CORS
 from extensions import db, jwt, bcrypt
 import os
 from dotenv import load_dotenv
 
-# Carrega as variáveis do arquivo .env a partir do diretório do módulo
-dotenv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
-load_dotenv(dotenv_path=dotenv_path)
+# Configurações de Caminho Absoluto
+base_dir = os.path.dirname(os.path.abspath(__file__))
+med_dir = os.path.join(base_dir, 'medsystem')
+
+# Carrega as variáveis do .env FORÇANDO a ignorar qualquer cache antigo do Windows
+dotenv_path = os.path.join(base_dir, '.env')
+load_dotenv(dotenv_path=dotenv_path, override=True)
 
 def create_app():
-    app = Flask(__name__)
-    
-    # ──── CONFIGURAÇÕES DE AMBIENTE (MySQL) ────
+    # Criação do App ensinando o Flask onde procurar o HTML e o CSS
+    app = Flask(__name__,
+                static_folder=os.path.join(med_dir, 'static'),
+                static_url_path='/static',
+                template_folder=os.path.join(med_dir, 'templates'))
+
+    # ──── CONFIGURAÇÕES DE AMBIENTE SEGURAS (MySQL) ────
     db_user = os.getenv('DB_USER', 'root')
     db_pass = os.getenv('DB_PASSWORD', '')
-    db_host = os.getenv('DB_HOST', 'localhost')
-    db_name = os.getenv('DB_NAME', 'medsystem_novo')
+    db_host = os.getenv('DB_HOST', '127.0.0.1')
+    db_name = os.getenv('DB_NAME', 'medsystem')
 
-    # Configurações do App - String de conexão do SQLAlchemy para MySQL
-    app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+mysqlconnector://{db_user}:{db_pass}@{db_host}/{db_name}'
+    # Monta a string de conexão
+    if db_pass:
+        uri = f'mysql+mysqlconnector://{db_user}:{db_pass}@{db_host}/{db_name}'
+    else:
+        uri = f'mysql+mysqlconnector://{db_user}@{db_host}/{db_name}'
+
+    app.config['SQLALCHEMY_DATABASE_URI'] = uri
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'medsystem-mestra-2026-secret')
 
@@ -29,21 +42,21 @@ def create_app():
     db.init_app(app)
     jwt.init_app(app)
     bcrypt.init_app(app)
-    CORS(app) # Permite que o Frontend no S3 acesse a API na EC2 sem problemas de CORS
+    CORS(app)
 
     with app.app_context():
         # ──── REGISTRO DE ROTAS (BLUEPRINTS) ────
-        from models import Usuario 
-        from routes.auth import auth_bp
-        from routes.pacientes import pacientes_bp
-        from routes.consultas import consultas_bp
-        from routes.additional import exames_bp, dashboard_bp
-        from routes.medicos import medicos_bp
-        from routes.prontuario import prontuario_bp
-        from routes.financeiro import financeiro_bp
-        from routes.cid10 import cid10_bp
-        from routes.mensagens import mensagens_bp
-        from routes.relatorios import relatorios_bp
+        from models import Usuario
+        from medsystem.routes.auth import auth_bp
+        from medsystem.routes.pacientes import pacientes_bp
+        from medsystem.routes.consultas import consultas_bp
+        from medsystem.routes.additional import exames_bp, dashboard_bp
+        from medsystem.routes.medicos import medicos_bp
+        from medsystem.routes.prontuario import prontuario_bp
+        from medsystem.routes.financeiro import financeiro_bp
+        from medsystem.routes.cid10 import cid10_bp
+        from medsystem.routes.mensagens import mensagens_bp
+        from medsystem.routes.relatorios import relatorios_bp
 
         # Registro das rotas da API
         app.register_blueprint(auth_bp, url_prefix='/api/auth')
@@ -57,11 +70,11 @@ def create_app():
         app.register_blueprint(cid10_bp, url_prefix='/api/cid10')
         app.register_blueprint(mensagens_bp, url_prefix='/api/mensagens')
         app.register_blueprint(relatorios_bp, url_prefix='/api/relatorios')
-        
-        # ──── CRIAÇÃO DO BANCO E DADOS INICIAIS ──── 
-        try: 
-            db.create_all() 
-            
+
+        # ──── CRIAÇÃO DO BANCO E DADOS INICIAIS ────
+        try:
+            db.create_all()
+
             # Inserção automática de Especialidades
             from models import Especialidade, Medico
             try:
@@ -83,22 +96,6 @@ def create_app():
                 print(f"ℹ Nota: {esp_err}")
 
             # Criação do usuário Administrador Principal
-            admin = Usuario.query.filter_by(email='medico@medsystem.com').first() 
-            if not admin: 
-                admin_user = Usuario( 
-                    nome="Administrador Principal", 
-                    email="medico@medsystem.com", 
-                    tipo="admin", 
-                    ativo=True 
-                ) 
-                admin_user.set_senha("MedSystem12#") 
-                db.session.add(admin_user) 
-                db.session.commit()
-                print("✓ Usuário Admin criado.")
-                
-        except Exception as e:
-            print(f"⚠️ Erro na inicialização: {e}")
-            
             admin = Usuario.query.filter_by(email='medico@medsystem.com').first()
             if not admin:
                 admin_user = Usuario(
@@ -109,8 +106,8 @@ def create_app():
                 )
                 admin_user.set_senha("MedSystem12#")
                 db.session.add(admin_user)
-                db.session.flush()
-            
+
+            # Criação do usuário Médico Teste (Necessário para associar CRM)
             medico = Usuario.query.filter_by(email='drcarlos@medsystem.com').first()
             if not medico:
                 user = Usuario(
@@ -122,27 +119,68 @@ def create_app():
                 user.set_senha("MedSystem12#")
                 db.session.add(user)
                 db.session.flush()
-                
+
                 medico_record = Medico(
                     id_usuario=user.id,
                     crm="SP123456",
                     id_especialidade=2
                 )
                 db.session.add(medico_record)
-            
+
             db.session.commit()
 
-    # ──── HEALTH CHECK (REQUISITO DA AULA 16) ────
+        except Exception as e:
+            print(f"⚠️ Erro silencioso no banco (tabelas já existem ou ajuste pendente): {e}")
+
+
+    # ──── ROTAS DO FRONTEND (As telas do sistema) ────
+    @app.route('/')
+    def index():
+        """Interface principal PRO (protótipo integrado)"""
+        return render_template('index_pro.html')
+
+    @app.route('/classic')
+    def index_classic():
+        """Interface simplificada com integração parcial"""
+        return render_template('index.html')
+
+    @app.route('/dashboard')
+    def dashboard():
+        """Dashboard legado com gráficos"""
+        return render_template('dashboard.html')
+
+    @app.route('/app/dashboard')
+    def app_dashboard():
+        """Dashboard interno com barra lateral"""
+        return render_template('app_dashboard.html', page='dashboard')
+
+    @app.route('/app/pacientes')
+    def app_pacientes():
+        """Listagem de pacientes"""
+        return render_template('app_pacientes.html', page='pacientes')
+
+    @app.route('/app/novo-paciente')
+    def app_novo_paciente():
+        """Formulário de novo paciente"""
+        return render_template('app_novo_paciente.html', page='novo-paciente')
+
+    @app.route('/app/paciente/<int:paciente_id>')
+    def app_ficha_paciente(paciente_id):
+        """Ficha detalhada de um paciente específico"""
+        return render_template('app_ficha_paciente.html', page='pacientes', paciente_id=paciente_id)
+
+
+    # ──── HEALTH CHECK (Monitoramento do Servidor) ────
     @app.route('/health', methods=['GET'])
     def health_check():
-        """Endpoint para verificar a saúde da API e do Banco de Dados"""
         try:
             db.session.execute(db.text('SELECT 1'))
             return jsonify({"status": "ok", "database": "connected"}), 200
         except Exception as e:
             return jsonify({"status": "error", "database": "disconnected", "details": str(e)}), 500
 
-    # ──── HANDLER DE ERROS GLOBAL (FORMATO JSON) ────
+
+    # ──── HANDLERS DE ERROS GLOBAIS ────
     @app.errorhandler(500)
     def handle_500_error(error):
         print(f"\n✗ ERRO 500: {error}\n")
@@ -152,7 +190,7 @@ def create_app():
 
     @app.errorhandler(404)
     def handle_404_error(error):
-        return jsonify({"error": "Not Found", "message": "O endpoint solicitado não existe."}), 404
+        return jsonify({"error": "Not Found", "message": "O endpoint ou página solicitada não existe."}), 404
 
     return app
 

@@ -8,18 +8,31 @@ let slotSelecionado = '';
 // LOGIN / LOGOUT - INTEGRADO COM BACKEND
 // ══════════════════════════════════════
 function doLogin() {
-  const email = document.getElementById('login-email').value.trim().toLowerCase();
-  const senha = document.getElementById('login-senha').value;
+  const emailEl = document.getElementById('login-email');
+  const senhaEl = document.getElementById('login-senha');
   const errEl = document.getElementById('login-error');
   const btn   = document.getElementById('login-btn');
 
-  errEl.style.display = 'none';
-  document.getElementById('login-email').classList.remove('error');
-  document.getElementById('login-senha').classList.remove('error');
+  if (!emailEl || !senhaEl || !btn) {
+    alert('Erro: tela de login incompleta. Recarregue a pagina.');
+    return;
+  }
+
+  const email = emailEl.value.trim().toLowerCase();
+  const senha = senhaEl.value;
+
+  if (errEl) {
+    errEl.style.display = 'none';
+    errEl.textContent = '';
+  }
+  emailEl.classList.remove('error');
+  senhaEl.classList.remove('error');
 
   if (!email || !senha) {
-    errEl.style.display = 'block';
-    errEl.textContent = '⚠ Preencha e-mail e senha para continuar.';
+    if (errEl) {
+      errEl.style.display = 'block';
+      errEl.textContent = 'Preencha e-mail e senha para continuar.';
+    }
     return;
   }
 
@@ -31,47 +44,71 @@ function doLogin() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, senha })
   })
-  .then(response => response.json())
-  .then(data => {
-    if (data.sucesso) {
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('usuario', JSON.stringify(data.usuario));
-      
-      currentUser = data.usuario;
-      loginSuccess(data.usuario);
-    } else {
-      errEl.style.display = 'block';
-      errEl.textContent = '⚠ ' + data.mensagem;
-      document.getElementById('login-email').classList.add('error');
-      document.getElementById('login-senha').classList.add('error');
-      btn.disabled = false;
-      btn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" style="stroke:#fff;fill:none"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg> Entrar no sistema';
+  .then(async response => {
+    let data = {};
+    try { data = await response.json(); } catch (e) { /* resposta nao-JSON */ }
+    if (!response.ok || !data.sucesso) {
+      throw new Error(data.mensagem || 'E-mail ou senha incorretos');
     }
+    return data;
+  })
+  .then(data => {
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('usuario', JSON.stringify(data.usuario));
+    currentUser = data.usuario;
+    loginSuccess(data.usuario);
   })
   .catch(error => {
-    console.error('Erro:', error);
-    errEl.style.display = 'block';
-    errEl.textContent = '⚠ Erro ao conectar com servidor. Tente novamente.';
+    console.error('Erro login:', error);
+    if (errEl) {
+      errEl.style.display = 'block';
+      errEl.textContent = error.message || 'Erro ao conectar com servidor.';
+    }
+    emailEl.classList.add('error');
+    senhaEl.classList.add('error');
+  })
+  .finally(() => {
     btn.disabled = false;
-    btn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" style="stroke:#fff;fill:none"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg> Entrar no sistema';
+    btn.textContent = 'Entrar no sistema';
   });
 }
 
+window.doLogin = doLogin;
+
+function setMetricValue(metric, value) {
+  const idMap = {
+    consultas_hoje: 'dash-consultas',
+    pacientes_ativos: 'dash-pacientes',
+    exames_pendentes: 'dash-exames',
+    novos_pacientes: 'dash-novos'
+  };
+  const byId = document.getElementById(idMap[metric]);
+  if (byId) byId.textContent = value;
+  const byMetric = document.querySelector('[data-metric="' + metric + '"]');
+  if (byMetric) byMetric.textContent = value;
+}
+
 function loginSuccess(user) {
-  const sbAvatar = document.getElementById('sidebar-avatar');
-  const sbName = document.getElementById('sidebar-name');
-  const sbRole = document.getElementById('sidebar-role');
+  const sbAvatar = document.getElementById('sidebar-avatar') || document.querySelector('.sidebar-footer .avatar');
+  const sbName = document.getElementById('sidebar-name') || document.querySelector('.sidebar-footer .user-name');
+  const sbRole = document.getElementById('sidebar-role') || document.querySelector('.sidebar-footer .user-role');
   
-  // ──── CORREÇÃO AQUI: Lendo os dados diretos do primeiro nível mapeado no Flask ────
+  // Lendo os dados diretos do primeiro nível mapeado no Flask
   const pCrmInput = document.getElementById('p-crm');
   const pEspInput = document.getElementById('p-esp');
   
   if (pCrmInput) pCrmInput.value = user.crm || 'N/A';
   if (pEspInput) pEspInput.value = user.especialidade || 'N/A';
   
-  if (sbAvatar) sbAvatar.textContent = user.iniciais || user.nome.substring(0, 2).toUpperCase();
+  const iniciais = user.iniciais || (user.nome ? user.nome.substring(0, 2).toUpperCase() : 'US');
+  if (sbAvatar) sbAvatar.textContent = iniciais;
   if (sbName) sbName.textContent = user.nome;
-  if (sbRole) sbRole.textContent = user.tipo || 'Usuário';
+  if (sbRole) {
+    const roleText = user.tipo === 'medico'
+      ? ((user.crm || 'CRM N/A') + ' · ' + (user.especialidade || 'Médico'))
+      : (user.tipo || 'Usuário');
+    sbRole.textContent = roleText;
+  }
 
   const navAdmin = document.getElementById('nav-admin');
   if (navAdmin) {
@@ -89,7 +126,6 @@ function loginSuccess(user) {
   if (pfNome) pfNome.textContent = user.nome;
   if (pfRole) pfRole.textContent = (user.tipo || 'Usuário') + ' • ID ' + user.id;
   
-  // Ajustado para mostrar a especialidade em vez do e-mail no subtítulo do perfil se for médico
   if (pfEsp) pfEsp.textContent = user.tipo === 'medico' ? user.especialidade : user.email;
   
   if (pNomeInput) pNomeInput.value = user.nome;
@@ -104,7 +140,10 @@ function loginSuccess(user) {
   const appScreen = document.getElementById('app-screen');
   
   if (loginScreen) loginScreen.style.display = 'none';
-  if (appScreen) appScreen.style.display = 'block';
+  if (appScreen) {
+    appScreen.style.display = 'block';
+    appScreen.classList.add('active');
+  }
 
   showToast('Bem-vindo, ' + user.nome + '! 👋', 'success');
   showPage('dashboard');
@@ -112,7 +151,9 @@ function loginSuccess(user) {
   carregarDashboard();
   carregarPacientes();
   carregarDadosParaAgendamento();
-  carregarConsultas(); 
+  carregarConsultas();
+
+  if (typeof carregarModuloPro === 'function') carregarModuloPro('dashboard');
   
   if (user.tipo === 'admin') {
     if (typeof carregarUsuarios === 'function') carregarUsuarios();
@@ -130,9 +171,14 @@ function doLogout() {
   currentUser = null;
   localStorage.removeItem('token');
   localStorage.removeItem('usuario');
-  
-  document.getElementById('app-screen').style.display = 'none';
-  document.getElementById('login-screen').style.display = 'flex';
+
+  const appScreen = document.getElementById('app-screen');
+  const loginScreen = document.getElementById('login-screen');
+  if (appScreen) {
+    appScreen.style.display = 'none';
+    appScreen.classList.remove('active');
+  }
+  if (loginScreen) loginScreen.style.display = 'flex';
   document.getElementById('login-senha').value = '';
   document.getElementById('login-error').style.display = 'none';
   document.getElementById('login-email').classList.remove('error');
@@ -159,32 +205,38 @@ async function carregarDashboard() {
 
     if (json.sucesso) {
       const d = json.dados;
-      const elCons = document.getElementById('dash-consultas');
-      const elPacs = document.getElementById('dash-pacientes');
-      const elExams = document.getElementById('dash-exames');
-      
-      if(elCons) elCons.textContent = d.consultas_hoje;
-      if(elPacs) elPacs.textContent = d.pacientes_ativos;
-      if(elExams) elExams.textContent = d.exames_pendentes;
+      setMetricValue('consultas_hoje', d.consultas_hoje);
+      setMetricValue('pacientes_ativos', d.pacientes_ativos);
+      setMetricValue('exames_pendentes', d.exames_pendentes);
 
-      if (d.ultimas_consultas && d.ultimas_consultas.length > 0) {
-        const tbodyDash = document.querySelector('#tabela-dash-consultas tbody');
-        if (tbodyDash) {
+      const tbodyDash = document.querySelector('#tabela-dash-consultas tbody')
+        || document.querySelector('#agenda-hoje-tbody');
+      if (tbodyDash) {
+        if (d.ultimas_consultas && d.ultimas_consultas.length > 0) {
           tbodyDash.innerHTML = '';
           d.ultimas_consultas.forEach(c => {
-            tbodyDash.innerHTML += `
-              <tr>
-                <td class="td-name">${c.paciente_nome}</td>
-                <td class="td-mono">${c.hora}</td>
-                <td><span class="badge badge-blue">${c.status}</span></td>
-              </tr>
-            `;
+            const cols = tbodyDash.closest('table')?.querySelectorAll('thead th').length || 3;
+            if (cols >= 5) {
+              tbodyDash.innerHTML += `
+                <tr>
+                  <td class="td-mono">${c.hora || '—'}</td>
+                  <td class="td-name">${c.paciente_nome}</td>
+                  <td><span class="badge badge-blue">${c.tipo || 'Consulta'}</span></td>
+                  <td><span class="badge badge-amber">${c.status}</span></td>
+                  <td><button class="btn btn-ghost btn-sm" onclick="abrirProntuario(${c.id_paciente || 0})">→</button></td>
+                </tr>`;
+            } else {
+              tbodyDash.innerHTML += `
+                <tr>
+                  <td class="td-name">${c.paciente_nome}</td>
+                  <td class="td-mono">${c.hora}</td>
+                  <td><span class="badge badge-blue">${c.status}</span></td>
+                </tr>`;
+            }
           });
-        }
-      } else {
-        const tbodyDash = document.querySelector('#tabela-dash-consultas tbody');
-        if (tbodyDash) {
-          tbodyDash.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #999;">Nenhuma consulta agendada para hoje</td></tr>';
+        } else {
+          const colspan = tbodyDash.closest('table')?.querySelectorAll('thead th').length || 3;
+          tbodyDash.innerHTML = '<tr><td colspan="' + colspan + '" style="text-align:center;color:#999;">Nenhuma consulta agendada para hoje</td></tr>';
         }
       }
     }
@@ -205,23 +257,36 @@ async function carregarExamesPendentes() {
       headers: { 'Authorization': 'Bearer ' + token }
     });
     const json = await res.json();
-    const tbody = document.querySelector('#tabela-dash-exames tbody');
+    const tbody = document.querySelector('#tabela-dash-exames tbody')
+      || document.getElementById('exames-pendentes-tbody');
     if (!tbody) return;
 
     if (json.sucesso && json.dados && Object.keys(json.dados).length > 0) {
       tbody.innerHTML = '';
       Object.entries(json.dados).slice(0, 5).forEach(([paciente, info]) => {
-        const urgente = info.exames.some(exame => exame.status === 'EM_ANALISE') ? 'SIM' : 'NÃO';
-        tbody.innerHTML += `
-          <tr>
-            <td class="td-name">${paciente}</td>
-            <td>${info.quantidade}</td>
-            <td class="${urgente === 'SIM' ? 'badge-red' : 'badge-green'}">${urgente}</td>
-          </tr>
-        `;
+        const urgente = info.exames.some(exame => exame.status === 'EM_ANALISE' || exame.prioridade === 'URGENTE');
+        if (tbody.id === 'exames-pendentes-tbody') {
+          const ex = info.exames[0] || {};
+          tbody.innerHTML += `
+            <tr>
+              <td class="td-name">${paciente}</td>
+              <td class="text-sm">${ex.nome_exame || 'Exame'}</td>
+              <td><span class="badge ${urgente ? 'badge-red' : 'badge-amber'}">${urgente ? 'Urgente' : 'Normal'}</span></td>
+              <td>${ex.data_solicitacao ? new Date(ex.data_solicitacao).toLocaleDateString('pt-BR') : '—'}</td>
+              <td><span class="badge badge-blue">${ex.status || 'Solicitado'}</span></td>
+            </tr>`;
+        } else {
+          tbody.innerHTML += `
+            <tr>
+              <td class="td-name">${paciente}</td>
+              <td>${info.quantidade}</td>
+              <td class="${urgente ? 'badge-red' : 'badge-green'}">${urgente ? 'SIM' : 'NÃO'}</td>
+            </tr>`;
+        }
       });
     } else {
-      tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #999;">Nenhum exame pendente encontrado</td></tr>';
+      const colspan = tbody.closest('table')?.querySelectorAll('thead th').length || 3;
+      tbody.innerHTML = '<tr><td colspan="' + colspan + '" style="text-align:center;color:#999;">Nenhum exame pendente encontrado</td></tr>';
     }
   } catch (erro) {
     console.error('Erro ao carregar exames pendentes:', erro);
@@ -244,22 +309,37 @@ async function carregarAlertasDashboard() {
       container.innerHTML = '';
       json.dados.slice(0, 4).forEach(alerta => {
         const dataTexto = alerta.data ? new Date(alerta.data).toLocaleDateString('pt-BR') : 'Data não disponível';
-        const tipoClasse = alerta.gravidade === 'CRITICA' ? 'alerta-critico' : 'alerta-grave';
-        const icone = alerta.gravidade === 'CRITICA' ? '⚠' : '❗';
+        const isCritico = alerta.gravidade === 'CRITICA' || alerta.gravidade === 'CRÍTICA';
+        const dotClass = isCritico ? 'red' : 'amber';
 
-        container.innerHTML += `
-          <div class="alerta-item ${tipoClasse}">
-            <div class="alerta-icon">${icone}</div>
-            <div class="alerta-content">
-              <div class="alerta-title">${alerta.paciente} — ${alerta.tipo}</div>
-              <div class="alerta-text">${alerta.descricao || 'Sem descrição adicional.'}</div>
-              <div class="alerta-meta">${dataTexto} · ${alerta.gravidade}</div>
-            </div>
-          </div>
-        `;
+        if (container.classList.contains('timeline')) {
+          container.innerHTML += `
+            <li class="tl-item">
+              <div class="tl-dot ${dotClass}"><svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg></div>
+              <div class="tl-content">
+                <div class="tl-title">${alerta.paciente} — ${alerta.tipo} <span class="badge badge-${isCritico ? 'red' : 'amber'}" style="margin-left:6px">${alerta.gravidade}</span></div>
+                <div class="tl-body">${alerta.descricao || 'Sem descrição adicional.'}</div>
+                <div class="tl-date">${dataTexto}</div>
+              </div>
+            </li>`;
+        } else {
+          container.innerHTML += `
+            <div class="alerta-item ${isCritico ? 'alerta-critico' : 'alerta-grave'}">
+              <div class="alerta-icon">${isCritico ? '⚠' : '❗'}</div>
+              <div class="alerta-content">
+                <div class="alerta-title">${alerta.paciente} — ${alerta.tipo}</div>
+                <div class="alerta-text">${alerta.descricao || 'Sem descrição adicional.'}</div>
+                <div class="alerta-meta">${dataTexto} · ${alerta.gravidade}</div>
+              </div>
+            </div>`;
+        }
       });
     } else {
-      container.innerHTML = '<div class="alerta-empty">Nenhum alerta clínico no momento.</div>';
+      if (container.classList.contains('timeline')) {
+        container.innerHTML = '<li class="tl-item"><div class="tl-content"><div class="tl-body" style="color:#999">Nenhum alerta clínico no momento.</div></div></li>';
+      } else {
+        container.innerHTML = '<div class="alerta-empty">Nenhum alerta clínico no momento.</div>';
+      }
     }
   } catch (erro) {
     console.error('Erro ao carregar alertas do dashboard:', erro);
@@ -286,13 +366,16 @@ async function carregarPacientes() {
             ? new Date(paciente.data_nascimento).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) 
             : '—';
 
+        // ──── CORREÇÃO: Pega o ID de onde ele estiver ────
+        const idCorreto = paciente.id || paciente.id_paciente;
+
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td>${paciente.nome}</td>
           <td>${paciente.cpf}</td>
           <td>${dataFmt}</td>
           <td>${paciente.telefone || '—'}</td>
-          <td><button class="btn btn-outline" onclick="abrirProntuario(${paciente.id})">Visualizar</button></td>
+          <td><button class="btn btn-outline" onclick="abrirProntuario(${idCorreto})">Visualizar</button></td>
         `;
         tbody.appendChild(tr);
       });
@@ -353,11 +436,13 @@ async function cadastrarPaciente() {
   const tel  = document.getElementById('np-tel') ? document.getElementById('np-tel').value.trim() : '';
   const email = document.getElementById('np-email') ? document.getElementById('np-email').value.trim() : '';
   const sangue = document.getElementById('np-sangue') ? document.getElementById('np-sangue').value : '';
-  const endereco = document.getElementById('np-endereco') ? document.getElementById('np-endereco').value.trim() : '';
-  const alergias = document.getElementById('np-alergias') ? document.getElementById('np-alergias').value.trim() : '';
-  const observacoes = document.getElementById('np-observacoes') ? document.getElementById('np-observacoes').value.trim() : '';
+  const enderecoEl = document.getElementById('np-endereco') || document.getElementById('np-end');
+  const alergiasEl = document.getElementById('np-alergias') || document.getElementById('np-alerg');
+  const observacoesEl = document.getElementById('np-observacoes') || document.getElementById('np-obs');
+  const endereco = enderecoEl ? enderecoEl.value.trim() : '';
+  const alergias = alergiasEl ? alergiasEl.value.trim() : '';
+  const observacoes = observacoesEl ? observacoesEl.value.trim() : '';
   
-  // Sinais Vitais (Opcionais)
   const peso = document.getElementById('np-peso') ? document.getElementById('np-peso').value : '';
   const altura = document.getElementById('np-altura') ? document.getElementById('np-altura').value : '';
   const pressao = document.getElementById('np-pressao') ? document.getElementById('np-pressao').value.trim() : '';
@@ -416,7 +501,6 @@ async function cadastrarPaciente() {
         endereco: endereco || null,
         alergias: alergias || null,
         observacoes: observacoes || null,
-        // Sinais Vitais
         peso: peso ? parseFloat(peso) : null,
         altura: altura ? parseInt(altura) : null,
         pressao: pressao || null,
@@ -430,7 +514,6 @@ async function cadastrarPaciente() {
     if (res.ok && dados.sucesso) {
       showToast('✅ Paciente cadastrado com sucesso!', 'success');
       
-      // Limpar formulário
       document.getElementById('np-nome').value = '';
       document.getElementById('np-cpf').value = '';
       document.getElementById('np-nasc').value = '';
@@ -438,9 +521,9 @@ async function cadastrarPaciente() {
       if (document.getElementById('np-tel')) document.getElementById('np-tel').value = '';
       if (document.getElementById('np-email')) document.getElementById('np-email').value = '';
       if (document.getElementById('np-sangue')) document.getElementById('np-sangue').value = '';
-      if (document.getElementById('np-endereco')) document.getElementById('np-endereco').value = '';
-      if (document.getElementById('np-alergias')) document.getElementById('np-alergias').value = '';
-      if (document.getElementById('np-observacoes')) document.getElementById('np-observacoes').value = '';
+      if (enderecoEl) enderecoEl.value = '';
+      if (alergiasEl) alergiasEl.value = '';
+      if (observacoesEl) observacoesEl.value = '';
       if (document.getElementById('np-peso')) document.getElementById('np-peso').value = '';
       if (document.getElementById('np-altura')) document.getElementById('np-altura').value = '';
       if (document.getElementById('np-pressao')) document.getElementById('np-pressao').value = '';
@@ -553,10 +636,7 @@ function mascaraTel(input) {
 }
 
 function mascaraCRM(input) {
-  // Remove tudo que não for número ou letra (permite números e a sigla do estado)
   let v = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-  
-  // Limita o tamanho máximo em 12 caracteres de forma programática
   if (v.length > 12) {
     v = v.slice(0, 12);
   }
@@ -575,11 +655,11 @@ function showPage(id) {
   window.scrollTo(0, 0);
 }
 
-const d = new Date();
-const dias = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+const dataHoje = new Date();
+const diasSemana = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
 const hojeElement = document.getElementById('hoje');
 if (hojeElement) {
-    hojeElement.textContent = dias[d.getDay()] + ', ' + d.toLocaleDateString('pt-BR', {day:'2-digit',month:'long',year:'numeric'});
+    hojeElement.textContent = diasSemana[dataHoje.getDay()] + ', ' + dataHoje.toLocaleDateString('pt-BR', {day:'2-digit',month:'long',year:'numeric'});
 }
 
 function showToast(msg, type) {
@@ -641,16 +721,21 @@ async function carregarConsultas() {
 
       json.dados.forEach(c => {
         const tr = document.createElement('tr');
-        const dataFmt = new Date(c.data_consulta).toLocaleDateString('pt-BR');
+        const dataFmt = c.data_consulta ? new Date(c.data_consulta).toLocaleDateString('pt-BR') : '—';
         const horaFmt = c.hora_consulta || '—';
+        const idPac = c.id_paciente || (c.paciente && (c.paciente.id || c.paciente.id_paciente));
+        const nomePac = (c.paciente && c.paciente.nome) || 'Paciente';
+        const nomeMed = (c.medico && c.medico.nome) || '—';
+        const idCons = c.id || c.id_consulta || '';
+
         tr.innerHTML = `
-          <td class="td-name">${c.paciente.nome}</td>
-          <td class="td-mono">${dataFmt}</td>
-          <td class="td-mono">${horaFmt}</td>
-          <td>${c.medico.nome}</td>
-          <td>${c.motivo}</td>
+          <td class="td-mono">#${String(idCons).padStart(4, '0')}</td>
+          <td class="td-name">${nomePac}</td>
+          <td class="td-mono">${dataFmt} ${horaFmt}</td>
+          <td>${nomeMed}</td>
+          <td>${c.motivo || '—'}</td>
           <td><span class="badge badge-amber">${c.status || 'Agendada'}</span></td>
-          <td><button class="btn btn-outline" onclick="abrirProntuario(${c.paciente.id})">Abrir</button></td>
+          <td><button class="btn btn-outline btn-sm" onclick="abrirProntuario(${idPac})">Abrir</button></td>
         `;
         tbody.appendChild(tr);
       });
@@ -659,6 +744,12 @@ async function carregarConsultas() {
 }
 
 async function abrirProntuario(idPaciente) {
+  // ──── TRAVA DE SEGURANÇA ────
+  if (!idPaciente || idPaciente === 'undefined') {
+    showToast('Erro interno: O paciente não possui um ID válido.', 'error');
+    return;
+  }
+
   // 1. Muda para a tela na mesma hora
   showPage('prontuario');
   
@@ -682,8 +773,11 @@ async function abrirProntuario(idPaciente) {
       // TRATAMENTO DE SEGURANÇA: Garante que o nome não seja nulo para não quebrar a tela
       const nomePaciente = p.nome || 'Nome Indisponível';
       
-      document.querySelector('.patient-name').textContent = nomePaciente;
-      document.querySelector('.patient-avatar').textContent = nomePaciente.substring(0,2).toUpperCase();
+      const nomeEl = document.querySelector('#page-prontuario .patient-name') || document.querySelector('.patient-name');
+      const avatarEl = document.querySelector('#page-prontuario .patient-avatar-lg')
+        || document.querySelector('.patient-avatar');
+      if (nomeEl) nomeEl.textContent = nomePaciente;
+      if (avatarEl) avatarEl.textContent = nomePaciente.substring(0, 2).toUpperCase();
       
       const infoVals = document.querySelectorAll('#page-prontuario .info-val');
       if(infoVals.length >= 2) {
@@ -710,7 +804,6 @@ async function abrirProntuario(idPaciente) {
 // ══════════════════════════════════════
 // NOVO USUÁRIO / NOVO MÉDICO (UNIFICADO)
 // ══════════════════════════════════════
-
 async function carregarEspecialidades() {
   try {
     const res = await fetch('/api/auth/especialidades');

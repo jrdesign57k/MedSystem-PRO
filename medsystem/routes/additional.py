@@ -4,6 +4,7 @@ MedSystem Additional Routes - Exames e Dashboard
 
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from sqlalchemy.orm import load_only
 from app import db
 from models import Exame, TipoExame, Consulta, Paciente, LogAuditoria, Diagnostico, Medico
 from datetime import datetime, timedelta
@@ -257,6 +258,66 @@ def obter_alertas():
             'sucesso': False,
             'mensagem': f'Erro: {str(e)}'
         }), 500
+
+@dashboard_bp.route('/agenda/semana', methods=['GET'])
+@jwt_required()
+def agenda_semanal():
+    """Agenda semanal para a interface PRO"""
+    try:
+        hoje = datetime.now().date()
+        dias_pt = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
+        horarios = ['08:00', '09:30', '11:00', '14:00', '15:30', '17:00']
+        dias = []
+
+        for i in range(7):
+            dia = hoje + timedelta(days=i)
+            inicio = datetime(dia.year, dia.month, dia.day)
+            fim = inicio + timedelta(days=1)
+
+            consultas = Consulta.query.options(
+                load_only(
+                    Consulta.id_consulta,
+                    Consulta.id_paciente,
+                    Consulta.data_consulta,
+                    Consulta.status,
+                    Consulta.motivo
+                )
+            ).filter(
+                Consulta.data_consulta >= inicio,
+                Consulta.data_consulta < fim
+            ).all()
+
+            consultas_list = []
+            for c in consultas:
+                hora = c.data_consulta.strftime('%H:%M') if c.data_consulta else '08:00'
+                consultas_list.append({
+                    'hora': hora,
+                    'paciente': c.paciente.nome if c.paciente else 'Paciente',
+                    'motivo': c.motivo or 'Consulta',
+                    'status': c.status or 'AGENDADA'
+                })
+
+            dias.append({
+                'label': dias_pt[dia.weekday()],
+                'dia': dia.strftime('%d/%m'),
+                'hoje': i == 0,
+                'consultas': consultas_list
+            })
+
+        return jsonify({
+            'sucesso': True,
+            'dados': {
+                'dias': dias,
+                'horarios': horarios
+            }
+        }), 200
+
+    except Exception as e:
+        return jsonify({
+            'sucesso': False,
+            'mensagem': f'Erro: {str(e)}'
+        }), 500
+
 
 @dashboard_bp.route('/proximas-consultas', methods=['GET'])
 @jwt_required()

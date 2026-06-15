@@ -15,7 +15,7 @@ print("  DIAGNÓSTICO E INICIALIZAÇÃO - MEDSYSTEM")
 print("=" * 60)
 
 # STEP 1: Verificar Python version
-print(f"\n✓ Python {sys.version}")
+print(f"\n[OK] Python {sys.version.split()[0]}")
 
 # STEP 2: Verificar dependências
 print("\nVerificando dependências...")
@@ -25,13 +25,13 @@ missing = []
 for package in required_packages:
     try:
         __import__(package)
-        print(f"  ✓ {package}")
+        print(f"  [OK] {package}")
     except ImportError:
-        print(f"  ✗ {package} - NÃO INSTALADO")
+        print(f"  [X] {package} - NAO INSTALADO")
         missing.append(package)
 
 if missing:
-    print(f"\n⚠️  ERRO: Pacotes faltando: {', '.join(missing)}")
+    print(f"\n[!] ERRO: Pacotes faltando: {', '.join(missing)}")
     print("\nExecute: pip install -r requirements.txt")
     sys.exit(1)
 
@@ -39,9 +39,9 @@ if missing:
 print("\nCarregando aplicação...")
 try:
     from app import create_app
-    print("  ✓ app.py carregado")
+    print("  [OK] app.py carregado")
 except Exception as e:
-    print(f"  ✗ Erro ao carregar app.py: {e}")
+    print(f"  [X] Erro ao carregar app.py: {e}")
     import traceback
     traceback.print_exc()
     sys.exit(1)
@@ -50,21 +50,21 @@ except Exception as e:
 print("\nCriando aplicação Flask...")
 try:
     app = create_app()
-    print("  ✓ Aplicação criada com sucesso")
+    print("  [OK] Aplicacao criada com sucesso")
 except Exception as e:
-    print(f"  ✗ Erro ao criar aplicação: {e}")
+    print(f"  [X] Erro ao criar aplicacao: {e}")
     import traceback
     traceback.print_exc()
     sys.exit(1)
 
 # STEP 5: Verificar configurações
 print("\nVerificando configurações...")
-print(f"  ✓ Database: {app.config.get('SQLALCHEMY_DATABASE_URI', 'N/A')}")
-print(f"  ✓ Debug: {app.debug}")
+print(f"  [OK] Database: {app.config.get('SQLALCHEMY_DATABASE_URI', 'N/A')}")
+print(f"  [OK] Debug: {app.debug}")
 
 # STEP 6: Pronto para rodar
 print("\n" + "=" * 60)
-print("  ✓ SUCESSO! Aplicação pronta para rodar")
+print("  [OK] SUCESSO! Aplicacao pronta para rodar")
 print("=" * 60)
 print("\nIniciando servidor em http://0.0.0.0:5000 ...")
 print("Pressione CTRL+C para parar.\n")

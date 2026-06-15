@@ -30,7 +30,7 @@ def login():
         dados = request.get_json()
         if not dados: return jsonify({'sucesso': False, 'mensagem': 'Dados não fornecidos'}), 400
         
-        user = Usuario.query.filter_by(email=dados.get('email')).first()
+        user = Usuario.query.filter_by(email=(dados.get('email') or '').strip().lower()).first()
         if user and user.verificar_senha(dados.get('senha')):
             if not user.ativo:
                 return jsonify({'sucesso': False, 'mensagem': 'Usuário inativo'}), 401
@@ -62,7 +62,7 @@ def login():
 @jwt_required()
 def obter_perfil():
     try:
-        usuario = Usuario.query.get(get_jwt_identity())
+        usuario = Usuario.query.get(int(get_jwt_identity()))
         if not usuario: return jsonify({'sucesso': False, 'mensagem': 'Usuário não encontrado'}), 404
         
         # --- AJUSTE AQUI: Facilita a leitura para o Frontend ---

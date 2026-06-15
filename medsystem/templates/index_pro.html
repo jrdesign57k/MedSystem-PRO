@@ -541,8 +541,47 @@ textarea { resize:vertical; min-height:72px; }
   .vitals-grid { grid-template-columns:repeat(2,1fr); }
 }
 </style>
+<link rel="stylesheet" href="/static/v10/style.css"/>
 </head>
 <body>
+
+<div id="login-screen">
+  <div class="login-left">
+    <div class="login-brand">
+      <div class="login-brand-icon">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8" stroke-width="2.5" stroke-linecap="round"/></svg>
+      </div>
+      <div>
+        <div class="login-brand-name">MedSystem PRO</div>
+        <div class="login-brand-sub">Sistema Médico Profissional</div>
+      </div>
+    </div>
+    <div class="login-headline">Gestão clínica<br/><span>completa e</span><br/>eficiente.</div>
+    <div class="login-desc">Pacientes, consultas, exames, prontuários, financeiro e equipe — tudo em um só lugar.</div>
+  </div>
+  <div class="login-right">
+    <div class="login-card">
+      <div class="login-card-title">Bem-vindo 👋</div>
+      <div class="login-card-sub">Acesse sua conta MedSystem PRO</div>
+      <div id="login-error" class="login-error" style="display:none;"></div>
+      <div class="login-field">
+        <label>E-mail</label>
+        <input type="email" id="login-email" value="medico@medsystem.com" onkeydown="if(event.key==='Enter')doLogin()"/>
+      </div>
+      <div class="login-field">
+        <label>Senha</label>
+        <input type="password" id="login-senha" value="MedSystem12#" onkeydown="if(event.key==='Enter')doLogin()"/>
+      </div>
+      <button class="login-btn" type="button" onclick="doLogin()" id="login-btn">
+        <svg viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
+        Entrar no sistema
+      </button>
+      <div class="login-footer">MedSystem PRO v2 · © 2026</div>
+    </div>
+  </div>
+</div>
+
+<div id="app-screen" style="display:none">
 
 <!-- SIDEBAR -->
 <aside class="sidebar">
@@ -611,11 +650,12 @@ textarea { resize:vertical; min-height:72px; }
 
   <div class="sidebar-footer">
     <div class="user-chip">
-      <div class="avatar avatar-blue">DM</div>
+      <div class="avatar avatar-blue" id="sidebar-avatar">DM</div>
       <div>
-        <div class="user-name">Dr. Mendonça</div>
-        <div class="user-role">CRM 12345 · Clínica Geral</div>
+        <div class="user-name" id="sidebar-name">Dr. Mendonça</div>
+        <div class="user-role" id="sidebar-role">Clínica Geral</div>
       </div>
+      <button class="btn btn-ghost btn-sm" onclick="doLogout()" title="Sair" style="margin-left:auto;color:rgba(255,255,255,.5)">Sair</button>
       <div class="online-dot"></div>
     </div>
   </div>
@@ -699,19 +739,19 @@ textarea { resize:vertical; min-height:72px; }
   <div class="stats-grid">
     <div class="stat-card blue">
       <div class="stat-label">Consultas Hoje</div>
-      <div class="stat-value" data-metric="consultas_hoje">8</div>
+      <div class="stat-value" id="dash-consultas" data-metric="consultas_hoje">0</div>
       <div class="stat-delta up">↑ 3 vs ontem</div>
       <div class="stat-icon-wrap"><svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg></div>
     </div>
     <div class="stat-card green">
       <div class="stat-label">Pacientes Ativos</div>
-      <div class="stat-value" data-metric="pacientes_ativos">142</div>
+      <div class="stat-value" id="dash-pacientes" data-metric="pacientes_ativos">0</div>
       <div class="stat-delta up">↑ 12 este mês</div>
       <div class="stat-icon-wrap"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
     </div>
     <div class="stat-card amber">
       <div class="stat-label">Exames Pendentes</div>
-      <div class="stat-value" data-metric="exames_pendentes">4</div>
+      <div class="stat-value" id="dash-exames" data-metric="exames_pendentes">0</div>
       <div class="stat-delta warn">⚠ 2 urgentes</div>
       <div class="stat-icon-wrap"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg></div>
     </div>
@@ -734,12 +774,8 @@ textarea { resize:vertical; min-height:72px; }
       <div class="table-wrap">
         <table>
           <thead><tr><th>Hora</th><th>Paciente</th><th>Tipo</th><th>Status</th><th></th></tr></thead>
-          <tbody>
-            <tr><td class="td-mono">08:00</td><td class="td-name">Carlos Alberto</td><td><span class="badge badge-blue">Retorno</span></td><td><span class="badge badge-green"><span class="badge-dot" style="background:var(--green-light)"></span>Concluída</span></td><td><button class="btn btn-ghost btn-sm" onclick="showPage('prontuario')">→</button></td></tr>
-            <tr><td class="td-mono">09:30</td><td class="td-name">Fernanda Costa</td><td><span class="badge badge-purple">1ª Consulta</span></td><td><span class="badge badge-blue"><span class="badge-dot" style="background:var(--blue-mid)"></span>Em andamento</span></td><td><button class="btn btn-ghost btn-sm" onclick="showPage('prontuario')">→</button></td></tr>
-            <tr><td class="td-mono">11:00</td><td class="td-name">Roberto Nascimento</td><td><span class="badge badge-red">Urgência</span></td><td><span class="badge badge-amber"><span class="badge-dot" style="background:var(--amber-light)"></span>Aguardando</span></td><td><button class="btn btn-ghost btn-sm" onclick="showPage('prontuario')">→</button></td></tr>
-            <tr><td class="td-mono">14:00</td><td class="td-name">Maria Oliveira</td><td><span class="badge badge-teal">Exame</span></td><td><span class="badge badge-gray">Agendada</span></td><td><button class="btn btn-ghost btn-sm">→</button></td></tr>
-            <tr><td class="td-mono">15:30</td><td class="td-name">João da Silva</td><td><span class="badge badge-blue">Retorno</span></td><td><span class="badge badge-gray">Agendada</span></td><td><button class="btn btn-ghost btn-sm">→</button></td></tr>
+          <tbody id="agenda-hoje-tbody">
+            <tr><td colspan="5" style="text-align:center;color:#999;">Carregando...</td></tr>
           </tbody>
         </table>
       </div>
@@ -752,31 +788,8 @@ textarea { resize:vertical; min-height:72px; }
         <span class="badge badge-red">3 ativos</span>
       </div>
       <div class="card-body" style="padding-top:12px">
-        <ul class="timeline">
-          <li class="tl-item">
-            <div class="tl-dot red"><svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
-            <div class="tl-content">
-              <div class="tl-title">Roberto Nascimento — PA 180/110 mmHg <span class="badge badge-red" style="margin-left:6px">CRÍTICO</span></div>
-              <div class="tl-body">Hipertensão grave. Necessita avaliação urgente.</div>
-              <div class="tl-date">10/05/2025 · Dr. Carlos Mendonça</div>
-            </div>
-          </li>
-          <li class="tl-item">
-            <div class="tl-dot amber"><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
-            <div class="tl-content">
-              <div class="tl-title">João da Silva — Glicemia 105 mg/dL</div>
-              <div class="tl-body">Pré-diabetes. Agendar retorno e orientação nutricional.</div>
-              <div class="tl-date">12/03/2025 · Dr. Carlos Mendonça</div>
-            </div>
-          </li>
-          <li class="tl-item">
-            <div class="tl-dot blue"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg></div>
-            <div class="tl-content">
-              <div class="tl-title">Maria Oliveira — HAS Estágio 1</div>
-              <div class="tl-body">Losartana 50mg. Retorno em 30 dias.</div>
-              <div class="tl-date">12/03/2025 · Dra. Ana Ferreira</div>
-            </div>
-          </li>
+        <ul class="timeline" id="alertas-list">
+          <li class="tl-item"><div class="tl-content"><div class="tl-body" style="color:#999">Carregando alertas...</div></div></li>
         </ul>
       </div>
     </div>
@@ -930,11 +943,7 @@ textarea { resize:vertical; min-height:72px; }
       <table id="tabela-consultas">
         <thead><tr><th>#</th><th>Paciente</th><th>Data / Hora</th><th>Médico</th><th>Motivo</th><th>Status</th><th>Ações</th></tr></thead>
         <tbody>
-          <tr><td class="td-mono">#0018</td><td class="td-name">Roberto Nascimento</td><td class="td-mono">10/05/2025 11:00</td><td>Dra. Ana Ferreira</td><td>Dor no peito</td><td><span class="badge badge-amber">Agendada</span></td><td class="td-actions"><button class="btn btn-outline btn-sm" onclick="showPage('prontuario')">Abrir</button><button class="btn btn-ghost btn-sm">⋯</button></td></tr>
-          <tr><td class="td-mono">#0017</td><td class="td-name">Fernanda Costa</td><td class="td-mono">08/05/2025 08:30</td><td>Dra. Beatriz Lima</td><td>Cansaço / peso</td><td><span class="badge badge-blue">Em andamento</span></td><td class="td-actions"><button class="btn btn-outline btn-sm" onclick="showPage('prontuario')">Abrir</button><button class="btn btn-ghost btn-sm">⋯</button></td></tr>
-          <tr><td class="td-mono">#0016</td><td class="td-name">Carlos Alberto</td><td class="td-mono">07/05/2025 10:00</td><td>Dr. Carlos Mendonça</td><td>Febre / tosse</td><td><span class="badge badge-green">Concluída</span></td><td class="td-actions"><button class="btn btn-outline btn-sm" onclick="showPage('prontuario')">Abrir</button><button class="btn btn-ghost btn-sm">⋯</button></td></tr>
-          <tr><td class="td-mono">#0015</td><td class="td-name">Maria Oliveira</td><td class="td-mono">12/03/2025 14:30</td><td>Dra. Ana Ferreira</td><td>Palpitações</td><td><span class="badge badge-green">Concluída</span></td><td class="td-actions"><button class="btn btn-outline btn-sm" onclick="showPage('prontuario')">Abrir</button><button class="btn btn-ghost btn-sm">⋯</button></td></tr>
-          <tr><td class="td-mono">#0014</td><td class="td-name">João da Silva</td><td class="td-mono">10/03/2025 09:00</td><td>Dr. Carlos Mendonça</td><td>Cefaleia / fadiga</td><td><span class="badge badge-green">Concluída</span></td><td class="td-actions"><button class="btn btn-outline btn-sm" onclick="showPage('prontuario')">Abrir</button><button class="btn btn-ghost btn-sm">⋯</button></td></tr>
+          <tr><td colspan="7" style="text-align:center;color:#999;">Carregando consultas...</td></tr>
         </tbody>
       </table>
     </div>
@@ -944,24 +953,31 @@ textarea { resize:vertical; min-height:72px; }
 <!-- ═══════════════════════════════════ PACIENTES ═══════════════════════════════════ -->
 <div id="page-pacientes" class="page">
   <div class="page-header">
-    <div><div class="page-title">Ficha do Paciente</div><div class="page-sub">João da Silva — ID #0001</div></div>
+    <div><div class="page-title">Pacientes</div><div class="page-sub">Lista e fichas dos pacientes cadastrados</div></div>
     <div class="header-actions">
-      <button class="btn btn-outline btn-sm" onclick="showPage('prescricoes')">
-        <svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>Nova Prescrição
-      </button>
-      <button class="btn btn-primary" onclick="openModal('modal-consulta')">
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>Agendar Consulta
+      <button class="btn btn-primary" onclick="showPage('novo_paciente')">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>Novo Paciente
       </button>
     </div>
   </div>
 
-  <div class="col-32">
+  <div class="card mb16">
+    <div class="card-header"><span class="card-title">Pacientes Cadastrados</span></div>
+    <div class="table-wrap">
+      <table id="tabela-pacientes">
+        <thead><tr><th>Nome</th><th>CPF</th><th>Nascimento</th><th>Telefone</th><th>Ações</th></tr></thead>
+        <tbody><tr><td colspan="5" style="text-align:center;color:#999;">Carregando...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="ficha-paciente-demo" style="display:none">
     <!-- Dados -->
     <div>
       <div class="patient-card mb16">
         <div class="patient-header">
           <div class="patient-avatar-lg">JS</div>
-          <div class="patient-name">João da Silva</div>
+          <div class="patient-name">Paciente</div>
           <div class="patient-meta"><span>44 anos · Masculino</span><span>O+ · ID #0001</span></div>
         </div>
         <div class="patient-body">
@@ -1041,9 +1057,8 @@ textarea { resize:vertical; min-height:72px; }
       </div>
     </div>
   </div>
+  </div><!-- /ficha-paciente-demo -->
 </div>
-
-<!-- ═══════════════════════════════════ PRONTUÁRIO ═══════════════════════════════════ -->
 <div id="page-prontuario" class="page">
   <div class="page-header">
     <div><div class="page-title">Prontuário Eletrônico</div><div class="page-sub">Consulta #0016 · Carlos Alberto · 07/05/2025</div></div>
@@ -1208,15 +1223,9 @@ textarea { resize:vertical; min-height:72px; }
   </div>
   <div class="card">
     <div class="table-wrap">
-      <table>
+      <table id="tabela-exames">
         <thead><tr><th>Paciente</th><th>Exame</th><th>Solicitado</th><th>Médico</th><th>Resultado</th><th>Prioridade</th><th>Ações</th></tr></thead>
-        <tbody>
-          <tr><td class="td-name">Carlos Alberto</td><td>Hemograma Completo</td><td class="td-mono">07/05/2025</td><td>Dr. Mendonça</td><td><span class="badge badge-amber">Aguardando</span></td><td><span class="badge badge-red">Urgente</span></td><td><button class="btn btn-ghost btn-sm">Ver</button></td></tr>
-          <tr><td class="td-name">Carlos Alberto</td><td>ECG 12 Derivações</td><td class="td-mono">07/05/2025</td><td>Dr. Mendonça</td><td><span class="badge badge-amber">Aguardando</span></td><td><span class="badge badge-red">Urgente</span></td><td><button class="btn btn-ghost btn-sm">Ver</button></td></tr>
-          <tr><td class="td-name">Fernanda Costa</td><td>TSH / T4 Livre</td><td class="td-mono">08/05/2025</td><td>Dra. Beatriz</td><td><span class="badge badge-blue">Em análise</span></td><td><span class="badge badge-amber">Normal</span></td><td><button class="btn btn-ghost btn-sm">Ver</button></td></tr>
-          <tr><td class="td-name">Fernanda Costa</td><td>Glicemia Jejum</td><td class="td-mono">08/05/2025</td><td>Dra. Beatriz</td><td><span class="badge badge-green">Disponível</span></td><td><span class="badge badge-amber">Normal</span></td><td><button class="btn btn-outline btn-sm" onclick="showToast('Resultado: 92 mg/dL — Normal','success')">Laudo</button></td></tr>
-          <tr><td class="td-name">João da Silva</td><td>Glicemia Jejum</td><td class="td-mono">10/03/2025</td><td>Dr. Mendonça</td><td><span class="badge badge-green">Disponível</span></td><td><span class="badge badge-green">Normal</span></td><td><button class="btn btn-outline btn-sm" onclick="showToast('Resultado: 105 mg/dL — Limítrofe','warn')">Laudo</button></td></tr>
-        </tbody>
+        <tbody><tr><td colspan="7" style="text-align:center;color:#999;">Carregando...</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -1420,7 +1429,15 @@ textarea { resize:vertical; min-height:72px; }
       <button class="btn btn-primary" onclick="showToast('Formulário de novo profissional aberto','info')">+ Novo Profissional</button>
     </div>
   </div>
-  <div class="three-col">
+  <div class="card mb16">
+    <div class="table-wrap">
+      <table id="tabela-equipe">
+        <thead><tr><th>Nome</th><th>CRM</th><th>Especialidade</th><th>Status</th></tr></thead>
+        <tbody><tr><td colspan="4" style="text-align:center;color:#999;">Carregando equipe...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="three-col" style="display:none">
     <div class="card">
       <div class="patient-header" style="background:linear-gradient(135deg,#1a56db,#1e3a8a)">
         <div class="patient-avatar-lg">DM</div>
@@ -1472,31 +1489,8 @@ textarea { resize:vertical; min-height:72px; }
     <!-- Lista de conversas -->
     <div class="card" style="height:520px;display:flex;flex-direction:column">
       <div class="card-header"><span class="card-title">Conversas</span></div>
-      <div style="flex:1;overflow-y:auto">
-        <div style="padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;background:var(--blue-bg);display:flex;gap:10px;align-items:center" onclick="selectChat('Ana Ferreira')">
-          <div class="avatar avatar-green" style="width:36px;height:36px;font-size:13px;flex-shrink:0">AF</div>
-          <div style="flex:1;min-width:0">
-            <div style="font-weight:600;font-size:13px">Dra. Ana Ferreira</div>
-            <div style="font-size:12px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">re: protocolo HAS do Roberto N.</div>
-          </div>
-          <div style="font-size:10.5px;color:var(--text4);flex-shrink:0">14:32</div>
-        </div>
-        <div style="padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;display:flex;gap:10px;align-items:center" onclick="selectChat('Beatriz Lima')">
-          <div class="avatar avatar-purple" style="width:36px;height:36px;font-size:13px;flex-shrink:0">BL</div>
-          <div style="flex:1;min-width:0">
-            <div style="font-weight:600;font-size:13px">Dra. Beatriz Lima</div>
-            <div style="font-size:12px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Exame Fernanda Costa disponível</div>
-          </div>
-          <div style="font-size:10.5px;color:var(--text4);flex-shrink:0">12:10</div>
-        </div>
-        <div style="padding:10px 14px;cursor:pointer;display:flex;gap:10px;align-items:center" onclick="selectChat('Recepção')">
-          <div class="avatar" style="background:var(--amber-light);color:#fff;width:36px;height:36px;font-size:13px;flex-shrink:0">RE</div>
-          <div style="flex:1;min-width:0">
-            <div style="font-weight:600;font-size:13px">Recepção</div>
-            <div style="font-size:12px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Paciente Roberto na recepção</div>
-          </div>
-          <div style="font-size:10.5px;color:var(--text4);flex-shrink:0">11:55</div>
-        </div>
+      <div style="flex:1;overflow-y:auto" id="chat-list">
+        <div style="padding:16px;color:#999;text-align:center">Carregando conversas...</div>
       </div>
     </div>
 
@@ -1505,22 +1499,11 @@ textarea { resize:vertical; min-height:72px; }
       <div class="card-header">
         <div style="display:flex;align-items:center;gap:10px">
           <div class="avatar avatar-green" style="width:32px;height:32px;font-size:12px">AF</div>
-          <div><div class="card-title">Dra. Ana Ferreira</div><div class="card-sub">Online</div></div>
+          <div><div class="card-title" id="chat-header-name">Selecione uma conversa</div><div class="card-sub">Mensagens internas</div></div>
         </div>
       </div>
       <div style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px" id="chat-body">
-        <div style="display:flex;gap:8px;align-items:flex-end">
-          <div class="avatar avatar-green" style="width:28px;height:28px;font-size:10px;flex-shrink:0">AF</div>
-          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px 12px 12px 3px;padding:10px 14px;max-width:75%;font-size:13px">Oi Dr. Mendonça! Vi que o Roberto Nascimento tem PA 180/110. Posso dar uma olhada nele antes da consulta?</div>
-        </div>
-        <div style="display:flex;gap:8px;align-items:flex-end;flex-direction:row-reverse">
-          <div class="avatar avatar-blue" style="width:28px;height:28px;font-size:10px;flex-shrink:0">DM</div>
-          <div style="background:var(--blue-mid);color:#fff;border-radius:12px 12px 3px 12px;padding:10px 14px;max-width:75%;font-size:13px">Sim, por favor! Seria ótimo ter uma avaliação cardiológica. Está agendado para 11h.</div>
-        </div>
-        <div style="display:flex;gap:8px;align-items:flex-end">
-          <div class="avatar avatar-green" style="width:28px;height:28px;font-size:10px;flex-shrink:0">AF</div>
-          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px 12px 12px 3px;padding:10px 14px;max-width:75%;font-size:13px">Perfeito. Estarei lá às 10:50. Vou trazer o protocolo de HAS grave.</div>
-        </div>
+        <div style="color:#999;text-align:center;padding:20px">Selecione uma conversa à esquerda</div>
       </div>
       <div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px">
         <input id="msg-input" placeholder="Escreva uma mensagem..." style="flex:1" onkeydown="if(event.key==='Enter')sendMsg()"/>
@@ -1641,6 +1624,8 @@ textarea { resize:vertical; min-height:72px; }
 </div><!-- /page-wrap -->
 </main>
 
+</div><!-- /app-screen -->
+
 <!-- ═══════════════ MODAL: Nova Consulta ═══════════════ -->
 <div class="modal-overlay" id="modal-consulta" onclick="if(event.target===this)closeModal('modal-consulta')">
   <div class="modal">
@@ -1651,26 +1636,26 @@ textarea { resize:vertical; min-height:72px; }
     <div class="modal-body">
       <div class="form-grid">
         <div class="form-group"><label>Paciente <span class="req">*</span></label>
-          <select><option>João da Silva</option><option>Maria Oliveira</option><option>Carlos Alberto</option><option>Roberto Nascimento</option><option>Fernanda Costa</option></select>
+          <select id="nc-pac"><option value="">Carregando pacientes...</option></select>
         </div>
         <div class="form-group"><label>Médico <span class="req">*</span></label>
-          <select><option>Dr. Carlos Mendonça</option><option>Dra. Ana Ferreira</option><option>Dra. Beatriz Lima</option></select>
+          <select id="nc-med"><option value="">Carregando médicos...</option></select>
         </div>
-        <div class="form-group"><label>Data <span class="req">*</span></label><input type="date"/></div>
-        <div class="form-group"><label>Hora <span class="req">*</span></label><input type="time" value="09:00"/></div>
+        <div class="form-group"><label>Data <span class="req">*</span></label><input id="nc-data" type="date"/></div>
+        <div class="form-group"><label>Hora <span class="req">*</span></label><input id="nc-hora" type="time" value="09:00"/></div>
         <div class="form-group"><label>Tipo de Consulta</label>
-          <select><option>1ª Consulta</option><option>Retorno</option><option>Urgência</option><option>Exame</option></select>
+          <select id="nc-tipo"><option>1ª Consulta</option><option>Retorno</option><option>Urgência</option><option>Exame</option></select>
         </div>
         <div class="form-group"><label>Convênio</label>
-          <select><option>Particular</option><option>Unimed</option><option>SulAmérica</option></select>
+          <select id="nc-convenio"><option>Particular</option><option>Unimed</option><option>SulAmérica</option></select>
         </div>
-        <div class="form-group full"><label>Motivo / Queixa Principal</label><input placeholder="Descreva brevemente o motivo da consulta"/></div>
-        <div class="form-group full"><label>Observações</label><textarea placeholder="Informações adicionais..." style="min-height:60px"></textarea></div>
+        <div class="form-group full"><label>Motivo / Queixa Principal <span class="req">*</span></label><input id="nc-motivo" placeholder="Descreva brevemente o motivo da consulta"/></div>
+        <div class="form-group full"><label>Observações</label><textarea id="nc-obs" placeholder="Informações adicionais..." style="min-height:60px"></textarea></div>
       </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('modal-consulta')">Cancelar</button>
-      <button class="btn btn-primary" onclick="closeModal('modal-consulta');showToast('Consulta agendada com sucesso!','success')">
+      <button class="btn btn-primary" onclick="agendarConsultaModal()">
         <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Confirmar Agendamento
       </button>
     </div>
@@ -1708,21 +1693,7 @@ textarea { resize:vertical; min-height:72px; }
 <div class="toast-area" id="toastArea"></div>
 
 <script>
-// ─── Dados globais ───
-const CID_DB = [
-  {cod:'I10',desc:'Hipertensão Arterial Sistêmica'},
-  {cod:'J06.9',desc:'Infecção aguda VAS não especificada'},
-  {cod:'E11',desc:'Diabetes Mellitus tipo 2'},
-  {cod:'R73.0',desc:'Glicemia de jejum alterada'},
-  {cod:'M54',desc:'Dorsalgia'},
-  {cod:'F41',desc:'Ansiedade'},
-  {cod:'J45',desc:'Asma'},
-  {cod:'I25',desc:'Doença isquêmica crônica do coração'},
-  {cod:'K21',desc:'Doença do refluxo gastroesofágico'},
-  {cod:'N39.0',desc:'Infecção do trato urinário'},
-];
-
-// ─── Navegação ───
+// ─── UI helpers (protótipo PRO) ───
 function showPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -1732,11 +1703,11 @@ function showPage(id) {
     if (btn.getAttribute('onclick')?.includes("'" + id + "'"))
       btn.classList.add('active');
   });
-  window.scrollTo(0,0);
-  document.getElementById('notifPanel').classList.remove('open');
+  window.scrollTo(0, 0);
+  const notif = document.getElementById('notifPanel');
+  if (notif) notif.classList.remove('open');
 }
 
-// ─── Tabs CRUD ───
 function switchTab(btn, id) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   btn.classList.add('active');
@@ -1746,25 +1717,27 @@ function switchTab(btn, id) {
   });
 }
 
-// ─── Relógio + Data ───
 function updateClock() {
-  const now = new Date();
-  document.getElementById('relogio').textContent = now.toLocaleTimeString('pt-BR');
+  const el = document.getElementById('relogio');
+  if (el) el.textContent = new Date().toLocaleTimeString('pt-BR');
 }
-setInterval(updateClock, 1000); updateClock();
+setInterval(updateClock, 1000);
+updateClock();
 
-const d = new Date();
-const dias = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
-const meses = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
-const dataStr = dias[d.getDay()] + ', ' + d.getDate() + ' de ' + meses[d.getMonth()] + ' de ' + d.getFullYear();
-const topDate = document.getElementById('hoje-top');
-if (topDate) topDate.textContent = d.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
-const sub = document.getElementById('hoje-sub');
-if (sub) sub.textContent = 'Visão geral — ' + dataStr;
+(function initProDate() {
+  const d = new Date();
+  const dias = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+  const meses = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  const dataStr = dias[d.getDay()] + ', ' + d.getDate() + ' de ' + meses[d.getMonth()] + ' de ' + d.getFullYear();
+  const topDate = document.getElementById('hoje-top');
+  if (topDate) topDate.textContent = d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+  const sub = document.getElementById('hoje-sub');
+  if (sub) sub.textContent = 'Visão geral — ' + dataStr;
+})();
 
-// ─── Toast ───
 function showToast(msg, type) {
   const area = document.getElementById('toastArea');
+  if (!area) return;
   const t = document.createElement('div');
   t.className = 'toast ' + (type || '');
   const icons = {
@@ -1779,226 +1752,51 @@ function showToast(msg, type) {
   setTimeout(() => t.remove(), 3300);
 }
 
-// ─── Modal ───
-function openModal(id) { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-
-// ─── Notificações ───
-function toggleNotif() {
-  document.getElementById('notifPanel').classList.toggle('open');
-}
-
-// ─── Filtrar tabela ───
+function openModal(id) { document.getElementById(id)?.classList.add('open'); }
+function closeModal(id) { document.getElementById(id)?.classList.remove('open'); }
+function toggleNotif() { document.getElementById('notifPanel')?.classList.toggle('open'); }
 function filtrarTabela(tblId, val) {
-  const rows = document.querySelectorAll('#' + tblId + ' tbody tr');
-  rows.forEach(r => {
+  document.querySelectorAll('#' + tblId + ' tbody tr').forEach(r => {
     r.style.display = r.textContent.toLowerCase().includes(val.toLowerCase()) ? '' : 'none';
   });
 }
-
-// ─── Busca global ───
-function globalSearchFn(val) {
-  if (!val) return;
-}
-
-// ─── SELECT simulado ───
-function simularSelect() {
-  const nome = document.getElementById('s-nome').value.toLowerCase();
-  const dados = [
-    {id:1,nome:'João da Silva',cpf:'111.222.333-01',nascimento:'15/04/1980',tipo:'O+',status:'Ativo'},
-    {id:2,nome:'Maria Oliveira',cpf:'222.333.444-02',nascimento:'22/08/1975',tipo:'A+',status:'Ativo'},
-    {id:3,nome:'Carlos Alberto',cpf:'333.444.555-03',nascimento:'10/01/1990',tipo:'B-',status:'Ativo'},
-    {id:4,nome:'Fernanda Costa',cpf:'444.555.666-04',nascimento:'30/11/1988',tipo:'AB+',status:'Ativo'},
-    {id:5,nome:'Roberto Nascimento',cpf:'555.666.777-05',nascimento:'05/07/1965',tipo:'O-',status:'Inativo'},
-  ];
-  const f = dados.filter(p => !nome || p.nome.toLowerCase().includes(nome));
-  let html = '<div class="proc-box mb16">'
-    + '<span class="kw">SELECT</span> id_paciente, nome, cpf, tipo_sanguineo '
-    + '<span class="kw">FROM</span> paciente '
-    + '<span class="kw">WHERE</span> ativo = <span class="num">1</span>';
-  if (nome) html += '\n<span class="kw">AND</span> nome <span class="kw">LIKE</span> <span class="str">\'' + nome + '%\'</span>';
-  html += '; <span class="cm">-- ' + f.length + ' resultado(s)</span></div>';
-  html += '<div class="card"><div class="table-wrap"><table><thead><tr><th>ID</th><th>Nome</th><th>CPF</th><th>Nascimento</th><th>Tipo</th><th>Status</th></tr></thead><tbody>';
-  f.forEach(p => {
-    html += `<tr>
-      <td class="td-mono">${p.id}</td>
-      <td class="td-name">${p.nome}</td>
-      <td class="td-mono">${p.cpf}</td>
-      <td>${p.nascimento}</td>
-      <td><span class="badge badge-red">${p.tipo}</span></td>
-      <td><span class="badge ${p.status==='Ativo'?'badge-green':'badge-gray'}">${p.status}</span></td>
-    </tr>`;
-  });
-  html += '</tbody></table></div></div>';
-  document.getElementById('select-result').innerHTML = html;
-  showToast('SELECT retornou ' + f.length + ' resultado(s).', 'success');
-}
-
-// ─── INSERT ───
-function simInsert() {
-  const nome = document.getElementById('ins-nome').value;
-  const cpf  = document.getElementById('ins-cpf').value;
-  if (!nome || !cpf) { showToast('Preencha nome e CPF!','error'); return; }
-  document.getElementById('insert-out').innerHTML = `<div class="proc-box">
-<span class="kw">START TRANSACTION</span>;
-<span class="cm">-- Executando: sp_cadastrar_paciente</span>
-<span class="kw">INSERT INTO</span> paciente (nome, cpf, ativo)
-<span class="kw">VALUES</span> (<span class="str">'${nome}'</span>, <span class="str">'${cpf}'</span>, <span class="num">1</span>);
-<span class="kw">INSERT INTO</span> log_auditoria ...;
-<span class="kw">COMMIT</span>; <span class="ok">-- ✓ Paciente inserido com sucesso</span>
-<span class="cm">-- @p_mensagem = 'Paciente cadastrado. ID gerado: 6'</span>
-</div>`;
-  showToast(`INSERT executado — '${nome}' cadastrado. COMMIT!`, 'success');
-}
-
-function simRollback() {
-  document.getElementById('insert-out').innerHTML = `<div class="proc-box">
-<span class="kw">START TRANSACTION</span>;
-<span class="cm">-- Executando: sp_cadastrar_paciente</span>
-<span class="kw">INSERT INTO</span> paciente ...;
-<span class="err">-- ERRO 1062: Duplicate entry '${document.getElementById('ins-cpf').value||'000.000.000-00'}' for key 'cpf'</span>
-<span class="kw">ROLLBACK</span>; <span class="err">-- ✗ Transação desfeita</span>
-<span class="cm">-- @p_mensagem = 'Erro: CPF já cadastrado no sistema.'</span>
-</div>`;
-  showToast('ROLLBACK — CPF duplicado, nenhum dado alterado.', 'error');
-}
-
-// ─── Procedure ───
-function executarProc() {
-  const sel = document.getElementById('proc-sel').value;
-  const tx  = document.getElementById('tx-type').value;
-  const isCommit = tx === 'commit';
-  let log = '';
-  if (isCommit) {
-    log = `<div class="proc-box">
-<span class="cm">-- Executando: CALL ${sel}(...)</span>
-<span class="kw">START TRANSACTION</span>;
-<span class="cm">-- Validações OK. Operações executadas.</span>
-<span class="kw">COMMIT</span>; <span class="ok">-- ✓ Transação confirmada</span>
-<span class="cm">-- @p_mensagem = 'Operação executada com sucesso.'</span>
-<span class="cm">-- 1 registro gravado em log_auditoria</span>
-</div>`;
-    showToast('COMMIT executado — dados persistidos.', 'success');
-  } else {
-    log = `<div class="proc-box">
-<span class="cm">-- Executando: CALL ${sel}(...)</span>
-<span class="kw">START TRANSACTION</span>;
-<span class="err">-- ERRO: Constraint violation / Foreign key error</span>
-<span class="kw">ROLLBACK</span>; <span class="err">-- ✗ Transação desfeita</span>
-<span class="cm">-- @p_mensagem = 'Erro ao executar operação. Nenhum dado alterado.'</span>
-</div>`;
-    showToast('ROLLBACK executado — nenhum dado alterado.', 'error');
-  }
-  document.getElementById('proc-output').innerHTML = log;
-}
-
-// ─── Checklist ───
 function toggleChk(el) {
   el.classList.toggle('done');
   const items = document.querySelectorAll('.chk-item');
-  const done  = document.querySelectorAll('.chk-item.done').length;
+  const done = document.querySelectorAll('.chk-item.done').length;
   const total = items.length;
-  document.getElementById('chk-count').textContent = done + ' / ' + total;
-  document.getElementById('chk-count').className = 'badge ' + (done === total ? 'badge-green' : done > 0 ? 'badge-blue' : 'badge-amber');
-  document.getElementById('chk-bar').style.width = (done / total * 100) + '%';
-  document.getElementById('chk-label').textContent = done === total
-    ? '✓ Checklist completo — pronto para cadastrar!'
-    : done + ' de ' + total + ' itens verificados';
-}
-
-
-function cadastrarPaciente() {
-  const nome = document.getElementById('np-nome').value.trim();
-  const cpf  = document.getElementById('np-cpf').value.trim();
-  if (!nome || !cpf) { showToast('Preencha os campos obrigatórios (*)','error'); return; }
-  // Adiciona na tabela de cadastros recentes
-  const tbody = document.getElementById('cadastros-recentes');
-  const convSel = document.querySelector('#page-novo_paciente select:nth-of-type(2)');
-  const conv = convSel ? convSel.value : 'Particular';
-  const now  = new Date();
-  const data = now.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});
-  const convBadge = conv === 'Particular' ? 'badge-gray' : conv === 'Unimed' ? 'badge-blue' : 'badge-purple';
-  const row = document.createElement('tr');
-  row.innerHTML = `<td class="td-name">${nome}</td><td class="td-mono">${data}</td><td><span class="badge ${convBadge}">${conv}</span></td><td><span class="badge badge-green">Ativo</span></td>`;
-  if (tbody) tbody.insertBefore(row, tbody.firstChild);
-  showToast(`Paciente '${nome}' cadastrado com sucesso!`, 'success');
-  limparForm();
-  // resetar checklist
-  document.querySelectorAll('.chk-item.done').forEach(i => i.classList.remove('done'));
   const cnt = document.getElementById('chk-count');
-  if (cnt) { cnt.textContent = '0 / 6'; cnt.className = 'badge badge-amber'; }
+  if (cnt) {
+    cnt.textContent = done + ' / ' + total;
+    cnt.className = 'badge ' + (done === total ? 'badge-green' : done > 0 ? 'badge-blue' : 'badge-amber');
+  }
   const bar = document.getElementById('chk-bar');
-  if (bar) bar.style.width = '0%';
-  const lbl = document.getElementById('chk-label');
-  if (lbl) lbl.textContent = 'Complete o checklist para habilitar o cadastro';
+  if (bar) bar.style.width = (done / total * 100) + '%';
 }
-function simularRollback() {
-  showToast('sp_cadastrar_paciente() → ERRO: CPF duplicado → ROLLBACK!', 'error');
-}
-function limparForm() {
-  ['np-nome','np-cpf','np-tel','np-email','np-end','np-alerg','np-obs'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
-  });
-  showToast('Formulário limpo.', 'info');
-}
-
-// ─── CID-10 search ───
-function buscarCID(q) {
-  const el = document.getElementById('cid-result');
-  if (!q) { el.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text4)">Digite para buscar diagnósticos CID-10</div>'; return; }
-  const res = CID_DB.filter(c => c.desc.toLowerCase().includes(q.toLowerCase()) || c.cod.toLowerCase().includes(q.toLowerCase()));
-  if (!res.length) { el.innerHTML = '<div style="padding:20px;color:var(--text3);text-align:center">Nenhum resultado encontrado</div>'; return; }
-  el.innerHTML = res.map(c => `
-    <div onclick="showToast('CID ${c.cod} selecionado: ${c.desc}','success')" style="padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:.1s" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''">
-      <div>
-        <div style="font-weight:600;font-size:13px">${c.desc}</div>
-        <div class="td-mono text-xs text-3" style="margin-top:2px">${c.cod}</div>
-      </div>
-      <span class="pill-label blue">${c.cod}</span>
-    </div>
-  `).join('');
-}
-
-// ─── Chat ───
-function selectChat(nome) {
-  showToast('Conversa com ' + nome + ' aberta','info');
-}
-function sendMsg() {
-  const inp = document.getElementById('msg-input');
-  const body = document.getElementById('chat-body');
-  if (!inp.value.trim()) return;
-  const div = document.createElement('div');
-  div.style.cssText = 'display:flex;gap:8px;align-items:flex-end;flex-direction:row-reverse';
-  div.innerHTML = `
-    <div class="avatar avatar-blue" style="width:28px;height:28px;font-size:10px;flex-shrink:0">DM</div>
-    <div style="background:var(--blue-mid);color:#fff;border-radius:12px 12px 3px 12px;padding:10px 14px;max-width:75%;font-size:13px">${inp.value}</div>`;
-  body.appendChild(div);
-  body.scrollTop = body.scrollHeight;
-  inp.value = '';
-}
-
-// ─── Add medicamento prescrição ───
 function addMed() {
   const list = document.getElementById('med-list');
+  if (!list) return;
   const div = document.createElement('div');
   div.className = 'rx-item';
-  div.style.marginBottom = '8px';
-  div.innerHTML = `<div style="flex:1"><div class="form-grid-3" style="gap:8px">
-    <div class="form-group"><label>Medicamento</label><input placeholder="Nome + dose"/></div>
-    <div class="form-group"><label>Posologia</label><input placeholder="1 comp. 8/8h"/></div>
-    <div class="form-group"><label>Duração</label><input placeholder="7 dias"/></div>
-  </div></div>
-  <button class="btn btn-ghost btn-sm" style="color:var(--red-light);margin-top:18px" onclick="this.parentElement.remove()">✕</button>`;
+  div.innerHTML = '<div class="form-group"><label>Medicamento</label><input placeholder="Nome + dose"/></div>';
   list.appendChild(div);
 }
-
-// fechar notif ao clicar fora
 document.addEventListener('click', e => {
   const p = document.getElementById('notifPanel');
   const btn = document.getElementById('notifBtn');
-  if (p.classList.contains('open') && !p.contains(e.target) && !btn.contains(e.target))
+  if (p && btn && p.classList.contains('open') && !p.contains(e.target) && !btn.contains(e.target))
     p.classList.remove('open');
+});
+</script>
+<script src="/static/v10/validacoes.js"></script>
+<script src="/static/v10/script.js?v=3"></script>
+<script src="/static/v10/pro.js?v=3"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const btn = document.getElementById('login-btn');
+  if (btn && typeof doLogin === 'function') {
+    btn.addEventListener('click', function(e) { e.preventDefault(); doLogin(); });
+  }
 });
 </script>
 </body>
