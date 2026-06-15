@@ -154,7 +154,7 @@ body { font-family:var(--font); background:var(--bg); color:var(--text); min-hei
 .topbar-sep { width:1px; height:20px; background:var(--border); }
 
 /* ── MAIN ── */
-.main { margin-left:var(--sidebar-w); padding-top:var(--topbar-h); min-height:100vh; }
+.main { margin-left:var(--sidebar-w); padding:var(--topbar-h) 0 0; min-height:100vh; }
 .page-wrap { padding:24px 28px; }
 .page { display:none; }
 .page.active { display:block; animation:fadein .18s ease; }
@@ -555,15 +555,25 @@ textarea { resize:vertical; min-height:72px; }
 @media(max-width:900px){
   .two-col, .three-col, .col-32, .col-23 { grid-template-columns:1fr; }
   .vitals-grid { grid-template-columns:repeat(2,1fr); }
+  /* mantem a agenda legivel e rolavel horizontalmente no mobile */
+  .agenda-grid { min-width:620px; }
 }
 @media(max-width:680px){
   .stats-grid, .four-col { grid-template-columns:1fr; }
   .page-wrap { padding:16px; }
   .page-header { flex-direction:column; align-items:flex-start; gap:12px; }
-  .header-actions { flex-wrap:wrap; }
+  .header-actions { flex-wrap:wrap; width:100%; }
+  .header-actions .btn { flex:1; justify-content:center; }
+  .topbar { padding-right:14px; gap:8px; }
   .topbar-search { max-width:none; }
   .topbar-clock, .topbar-date { display:none; }
   table { font-size:12px; }
   .modal { width:94vw; max-width:94vw; }
-  .form-grid { grid-template-columns:1fr; }
+  .form-grid, .form-grid-3 { grid-template-columns:1fr; }
+  /* abas roláveis sem quebrar o layout */
+  .tabs { width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  /* evita o zoom automático do iOS ao focar campos */
+  input, select, textarea { font-size:16px; }
+  /* notificações ocupam quase a tela toda */
+  .notif-panel { width:calc(100vw - 24px); right:-8px; }
 }
