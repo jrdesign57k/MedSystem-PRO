@@ -2,47 +2,31 @@
   <div class="topbar-search">
     <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
     <input placeholder="Buscar paciente, consulta, exame..." id="globalSearch" oninput="globalSearchFn(this.value)"/>
-    <span style="font-size:11px;color:var(--text4);font-family:var(--mono)">⌘K</span>
+    <span class="topbar-search-hint">⌘K</span>
   </div>
 
   <div class="topbar-right">
-    <div style="display:flex;flex-direction:column;align-items:flex-end;margin-right:4px;">
+    <div class="topbar-datetime">
       <div class="topbar-clock" id="relogio">00:00:00</div>
       <div class="topbar-date" id="hoje-top"></div>
     </div>
     <div class="topbar-sep"></div>
-    <div style="position:relative;">
-      <button class="topbar-btn" id="notifBtn" onclick="toggleNotif()">
+    <div class="notif-wrap">
+      <button class="topbar-btn" id="notifBtn" type="button" onclick="toggleNotif()" aria-label="Alertas clínicos">
         <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
-        <span class="notif-dot"></span>
+        <span class="notif-dot" id="notifDot" style="display:none"></span>
       </button>
       <div class="notif-panel" id="notifPanel">
         <div class="notif-header">
-          <span style="font-size:13px;font-weight:700">Notificações</span>
-          <span style="font-size:12px;color:var(--blue-mid);cursor:pointer">Marcar lidas</span>
+          <span style="font-size:13px;font-weight:700">Alertas clínicos</span>
+          <span style="font-size:12px;color:var(--blue-mid);cursor:pointer" onclick="marcarNotificacoesLidas()">Marcar lidas</span>
         </div>
-        <div class="notif-item">
-          <div class="notif-icon" style="background:var(--red-light)"><svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg></div>
-          <div><div class="notif-text">Roberto Nascimento — PA crítica: 180/110 mmHg</div><div class="notif-time">há 5 min</div></div>
-        </div>
-        <div class="notif-item">
-          <div class="notif-icon" style="background:var(--amber-light)"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg></div>
-          <div><div class="notif-text">4 exames aguardando laudo — Carlos Alberto (urgente)</div><div class="notif-time">há 20 min</div></div>
-        </div>
-        <div class="notif-item">
-          <div class="notif-icon" style="background:var(--green-light)"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
-          <div><div class="notif-text">Prontuário de Maria Oliveira atualizado</div><div class="notif-time">há 1h</div></div>
-        </div>
-        <div class="notif-item">
-          <div class="notif-icon" style="background:var(--blue-mid)"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>
-          <div><div class="notif-text">Nova mensagem: Dra. Ana Ferreira — re: protocolo HAS</div><div class="notif-time">há 2h</div></div>
+        <div id="notifList">
+          <div class="notif-empty">Carregando alertas...</div>
         </div>
       </div>
     </div>
-    <button class="topbar-btn">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
-    </button>
-    <button class="topbar-btn">
+    <button class="topbar-btn" type="button" onclick="irParaEquipe()" title="Usuários e equipe" aria-label="Usuários e equipe">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 10-16 0"/></svg>
     </button>
   </div>

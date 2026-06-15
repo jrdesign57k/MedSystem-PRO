@@ -57,6 +57,7 @@ function doLogin() {
     localStorage.setItem('usuario', JSON.stringify(data.usuario));
     currentUser = data.usuario;
     loginSuccess(data.usuario);
+    if (typeof carregarNotificacoes === 'function') carregarNotificacoes();
   })
   .catch(error => {
     console.error('Erro login:', error);
@@ -154,12 +155,12 @@ function loginSuccess(user) {
   carregarConsultas();
 
   if (typeof carregarModuloPro === 'function') carregarModuloPro('dashboard');
-  
-  if (user.tipo === 'admin') {
-    if (typeof carregarUsuarios === 'function') carregarUsuarios();
-    if (typeof carregarMedicos === 'function') carregarMedicos();
-    carregarEspecialidades(); 
-    
+
+  if (typeof aplicarPermissoesEquipe === 'function') aplicarPermissoesEquipe(user);
+  if (typeof carregarNotificacoes === 'function') carregarNotificacoes();
+
+  if (user.tipo === 'admin' || user.tipo === 'medico') {
+    if (typeof carregarEspecialidades === 'function') carregarEspecialidades();
     const inputSenha = document.getElementById('nu-senha');
     if (inputSenha && typeof exibirIndicadorForcaSenha === 'function') {
       exibirIndicadorForcaSenha(inputSenha, 'nu-senha-force');
@@ -223,7 +224,7 @@ async function carregarDashboard() {
                   <td class="td-name">${c.paciente_nome}</td>
                   <td><span class="badge badge-blue">${c.tipo || 'Consulta'}</span></td>
                   <td><span class="badge badge-amber">${c.status}</span></td>
-                  <td><button class="btn btn-ghost btn-sm" onclick="abrirProntuario(${c.id_paciente || 0})">→</button></td>
+                  <td><button class="btn btn-ghost btn-sm btn-prontuario" onclick="abrirProntuario(${c.id_paciente || 0}, ${c.id_consulta || 0})">→</button></td>
                 </tr>`;
             } else {
               tbodyDash.innerHTML += `
@@ -307,29 +308,32 @@ async function carregarAlertasDashboard() {
 
     if (json.sucesso && Array.isArray(json.dados) && json.dados.length > 0) {
       container.innerHTML = '';
-      json.dados.slice(0, 4).forEach(alerta => {
+      json.dados.slice(0, 6).forEach(alerta => {
         const dataTexto = alerta.data ? new Date(alerta.data).toLocaleDateString('pt-BR') : 'Data não disponível';
-        const isCritico = alerta.gravidade === 'CRITICA' || alerta.gravidade === 'CRÍTICA';
-        const dotClass = isCritico ? 'red' : 'amber';
+        const g = (alerta.gravidade || 'LEVE').toUpperCase();
+        let badge = 'green', dotClass = 'green', alertaClass = 'alerta-leve';
+        if (g.includes('CRIT')) { badge = 'red'; dotClass = 'red'; alertaClass = 'alerta-critico'; }
+        else if (g === 'GRAVE') { badge = 'amber'; dotClass = 'amber'; alertaClass = 'alerta-grave'; }
+        else if (g === 'MODERADA') { badge = 'amber'; dotClass = 'amber'; alertaClass = 'alerta-moderado'; }
 
         if (container.classList.contains('timeline')) {
           container.innerHTML += `
             <li class="tl-item">
               <div class="tl-dot ${dotClass}"><svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg></div>
               <div class="tl-content">
-                <div class="tl-title">${alerta.paciente} — ${alerta.tipo} <span class="badge badge-${isCritico ? 'red' : 'amber'}" style="margin-left:6px">${alerta.gravidade}</span></div>
+                <div class="tl-title">${alerta.paciente} — ${alerta.tipo || g} <span class="badge badge-${badge}" style="margin-left:6px">${g}</span></div>
                 <div class="tl-body">${alerta.descricao || 'Sem descrição adicional.'}</div>
                 <div class="tl-date">${dataTexto}</div>
               </div>
             </li>`;
         } else {
           container.innerHTML += `
-            <div class="alerta-item ${isCritico ? 'alerta-critico' : 'alerta-grave'}">
-              <div class="alerta-icon">${isCritico ? '⚠' : '❗'}</div>
+            <div class="alerta-item ${alertaClass}">
+              <div class="alerta-icon">${g.includes('CRIT') ? '⚠' : g === 'GRAVE' ? '❗' : '●'}</div>
               <div class="alerta-content">
-                <div class="alerta-title">${alerta.paciente} — ${alerta.tipo}</div>
+                <div class="alerta-title">${alerta.paciente} — ${alerta.tipo || g}</div>
                 <div class="alerta-text">${alerta.descricao || 'Sem descrição adicional.'}</div>
-                <div class="alerta-meta">${dataTexto} · ${alerta.gravidade}</div>
+                <div class="alerta-meta">${dataTexto} · ${g}</div>
               </div>
             </div>`;
         }
@@ -369,13 +373,18 @@ async function carregarPacientes() {
         // ──── CORREÇÃO: Pega o ID de onde ele estiver ────
         const idCorreto = paciente.id || paciente.id_paciente;
 
+        const podePront = typeof podeAcessarProntuario === 'function' && podeAcessarProntuario();
+        const btnPront = podePront
+          ? `<button class="btn btn-outline btn-prontuario" onclick="abrirProntuario(${idCorreto})">Prontuário</button>`
+          : '';
+
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td>${paciente.nome}</td>
           <td>${paciente.cpf}</td>
           <td>${dataFmt}</td>
           <td>${paciente.telefone || '—'}</td>
-          <td><button class="btn btn-outline" onclick="abrirProntuario(${idCorreto})">Visualizar</button></td>
+          <td>${btnPront || '<span class="text-3">—</span>'}</td>
         `;
         tbody.appendChild(tr);
       });
@@ -391,13 +400,15 @@ async function carregarDadosParaAgendamento() {
     if (!token) return;
 
     const headers = { 'Authorization': 'Bearer ' + token };
-    const [resPacientes, resMedicos] = await Promise.all([
+    const [resPacientes, resMedicos, resPrecos] = await Promise.all([
       fetch('/api/pacientes', { headers }),
-      fetch('/api/medicos', { headers })
+      fetch('/api/medicos', { headers }),
+      fetch('/api/financeiro/precos', { headers })
     ]);
 
     const jsonPacientes = await resPacientes.json();
     const jsonMedicos = await resMedicos.json();
+    const jsonPrecos = await resPrecos.json();
 
     if (jsonPacientes.sucesso) {
       const selectPac = document.getElementById('nc-pac');
@@ -419,6 +430,44 @@ async function carregarDadosParaAgendamento() {
           selectMed.innerHTML += `<option value="${m.id}">Dr(a). ${nomeMedico} (${espNome})</option>`;
         });
       }
+    }
+
+    if (jsonPrecos.sucesso) {
+      const selectConv = document.getElementById('nc-convenio');
+      if (selectConv) {
+        const convenios = new Set(['Particular']);
+        (jsonPrecos.precos || []).forEach(p => {
+          if (p.modalidade === 'Convenio' && p.nome_convenio) convenios.add(p.nome_convenio);
+        });
+        selectConv.innerHTML = [...convenios].map(c =>
+          `<option value="${c}">${c}</option>`
+        ).join('');
+      }
+    }
+
+    if (typeof atualizarPreviewPrecoAgendamento === 'function') {
+      atualizarPreviewPrecoAgendamento();
+    }
+
+    const ncData = document.getElementById('nc-data');
+    const ncMed = document.getElementById('nc-med');
+    if (ncData && !ncData.dataset.horariosBound) {
+      ncData.dataset.horariosBound = '1';
+      ncData.addEventListener('change', () => {
+        if (typeof carregarHorariosDisponiveis === 'function') carregarHorariosDisponiveis();
+      });
+      if (!ncData.value) {
+        ncData.value = new Date().toISOString().slice(0, 10);
+      }
+    }
+    if (ncMed && !ncMed.dataset.horariosBound) {
+      ncMed.dataset.horariosBound = '1';
+      ncMed.addEventListener('change', () => {
+        if (typeof carregarHorariosDisponiveis === 'function') carregarHorariosDisponiveis();
+      });
+    }
+    if (typeof carregarHorariosDisponiveis === 'function') {
+      carregarHorariosDisponiveis();
     }
   } catch (erro) {
     console.error('Erro ao carregar dados de agendamento:', erro);
@@ -571,6 +620,9 @@ async function agendarConsulta() {
   }
   
   const dataIso = `${data}T${hora}:00`; 
+  const tipo = document.getElementById('nc-tipo')?.value || '1ª Consulta';
+  const convenio = document.getElementById('nc-convenio')?.value || 'Particular';
+  const obs = document.getElementById('nc-obs')?.value?.trim();
 
   try {
     const token = localStorage.getItem('token');
@@ -585,17 +637,24 @@ async function agendarConsulta() {
         id_medico: parseInt(medId),
         data_consulta: dataIso,
         hora_consulta: hora,
-        motivo: motivo
+        motivo: motivo,
+        tipo_consulta: tipo,
+        convenio: convenio,
+        observacoes: obs || null
       })
     });
 
     const dados = await res.json();
 
     if (res.ok && dados.sucesso) {
-      showToast('Consulta agendada com sucesso!', 'success');
+      let msg = dados.mensagem || 'Consulta agendada com sucesso!';
+      if (dados.aviso_preco) msg += ' (' + dados.aviso_preco + ')';
+      showToast(msg, dados.receita ? 'success' : 'warn');
       limparFormConsulta();
+      closeModal('modal-consulta');
       carregarDashboard(); 
-      carregarConsultas(); 
+      carregarConsultas();
+      if (typeof carregarAgendaSemanal === 'function') carregarAgendaSemanal();
     } else {
       showToast('Erro: ' + (dados.mensagem || 'Falha ao agendar'), 'error');
     }
@@ -612,8 +671,12 @@ function limparFormConsulta() {
   document.getElementById('nc-hora').value = '';
   document.getElementById('nc-motivo').value = '';
   const obs = document.getElementById('nc-obs');
-  if(obs) obs.value = '';
-  document.querySelectorAll('.agenda-slot').forEach(s => s.classList.remove('selected'));
+  if (obs) obs.value = '';
+  document.querySelectorAll('.hora-slot-btn.selecionado').forEach(s => s.classList.remove('selecionado'));
+  const slots = document.getElementById('nc-horarios-slots');
+  if (slots) {
+    slots.innerHTML = '<div class="hora-slots-hint">Selecione médico e data para ver os horários</div>';
+  }
   slotSelecionado = '';
 }
 
@@ -728,6 +791,11 @@ async function carregarConsultas() {
         const nomeMed = (c.medico && c.medico.nome) || '—';
         const idCons = c.id || c.id_consulta || '';
 
+        const podePront = typeof podeAcessarProntuario === 'function' && podeAcessarProntuario();
+        const btnPront = podePront
+          ? `<button class="btn btn-outline btn-sm btn-prontuario" onclick="abrirProntuario(${idPac}, ${idCons})">Prontuário</button>`
+          : '<span class="text-3">—</span>';
+
         tr.innerHTML = `
           <td class="td-mono">#${String(idCons).padStart(4, '0')}</td>
           <td class="td-name">${nomePac}</td>
@@ -735,7 +803,7 @@ async function carregarConsultas() {
           <td>${nomeMed}</td>
           <td>${c.motivo || '—'}</td>
           <td><span class="badge badge-amber">${c.status || 'Agendada'}</span></td>
-          <td><button class="btn btn-outline btn-sm" onclick="abrirProntuario(${idPac})">Abrir</button></td>
+          <td>${btnPront}</td>
         `;
         tbody.appendChild(tr);
       });
@@ -743,63 +811,7 @@ async function carregarConsultas() {
   } catch (erro) { console.error('Erro ao buscar consultas:', erro); }
 }
 
-async function abrirProntuario(idPaciente) {
-  // ──── TRAVA DE SEGURANÇA ────
-  if (!idPaciente || idPaciente === 'undefined') {
-    showToast('Erro interno: O paciente não possui um ID válido.', 'error');
-    return;
-  }
-
-  // 1. Muda para a tela na mesma hora
-  showPage('prontuario');
-  
-  try {
-    const token = localStorage.getItem('token');
-    const res = await fetch(`/api/pacientes/${idPaciente}`, { 
-        headers: { 'Authorization': 'Bearer ' + token } 
-    });
-    
-    // Verifica se a API deu erro 500 ou 404 antes de ler o JSON
-    if (!res.ok) {
-        showToast('Erro no servidor ao buscar paciente.', 'error');
-        return;
-    }
-
-    const json = await res.json();
-
-    if (json.sucesso && json.dados) {
-      const p = json.dados;
-      
-      // TRATAMENTO DE SEGURANÇA: Garante que o nome não seja nulo para não quebrar a tela
-      const nomePaciente = p.nome || 'Nome Indisponível';
-      
-      const nomeEl = document.querySelector('#page-prontuario .patient-name') || document.querySelector('.patient-name');
-      const avatarEl = document.querySelector('#page-prontuario .patient-avatar-lg')
-        || document.querySelector('.patient-avatar');
-      if (nomeEl) nomeEl.textContent = nomePaciente;
-      if (avatarEl) avatarEl.textContent = nomePaciente.substring(0, 2).toUpperCase();
-      
-      const infoVals = document.querySelectorAll('#page-prontuario .info-val');
-      if(infoVals.length >= 2) {
-          
-        // TRATAMENTO DE SEGURANÇA: Garante que o CPF não seja nulo
-        let cpfStr = p.cpf || 'N/A';
-        // Só aplica o replace se o CPF tiver apenas números e 11 caracteres
-        if (cpfStr.length === 11 && !cpfStr.includes('.')) {
-            cpfStr = cpfStr.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
-        }
-        
-        infoVals[0].textContent = cpfStr;
-        infoVals[1].innerHTML = p.alergias ? `<span class="allergy-tag">⚠ ${p.alergias}</span>` : 'Nenhuma alergia registrada';
-      }
-    } else {
-      showToast('Paciente não encontrado no banco de dados.', 'error');
-    }
-  } catch (erro) { 
-    console.error("Erro interno ao carregar prontuário:", erro);
-    showToast('Erro ao carregar prontuário. Verifique o console.', 'error'); 
-  }
-}
+// abrirProntuario() definido em pro.js (acesso médico/admin)
 
 // ══════════════════════════════════════
 // NOVO USUÁRIO / NOVO MÉDICO (UNIFICADO)
@@ -864,16 +876,18 @@ async function novoUsuario() {
 
     const json = await res.json();
 
-    if (res.ok && json.sucesso) {
+    if (json.sucesso) {
       showToast('✅ Acesso criado com sucesso!', 'success');
-      
-      if(typeof limparFormUsuario === 'function') limparFormUsuario();
-      
-      showPage('usuarios');
-      
-      if (typeof carregarUsuarios === 'function') carregarUsuarios();
-      if (tipo === 'medico' && typeof carregarMedicos === 'function') carregarMedicos();
-      if (typeof carregarDadosParaAgendamento === 'function') carregarDadosParaAgendamento();
+      toggleFormUsuario(false);
+      document.getElementById('nu-nome').value = '';
+      document.getElementById('nu-email').value = '';
+      document.getElementById('nu-senha').value = '';
+      document.getElementById('nu-tipo').value = 'recepcao';
+      if (document.getElementById('nu-crm')) document.getElementById('nu-crm').value = '';
+      toggleCamposMedicoUsuario();
+
+      showPage('equipe');
+      if (typeof carregarEquipe === 'function') carregarEquipe();
       
     } else {
       showToast('❌ ' + (json.mensagem || 'Erro ao criar usuário'), 'error');

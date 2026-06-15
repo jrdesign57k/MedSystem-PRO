@@ -221,6 +221,8 @@ class Consulta(db.Model):
             'hora_consulta': self.hora_consulta,
             'status': self.status,
             'motivo': self.motivo,
+            'tipo_consulta': self.tipo_consulta,
+            'convenio': self.convenio,
             'paciente': {
                 'id': self.paciente.id_paciente,
                 'nome': self.paciente.nome
@@ -237,7 +239,7 @@ class Consulta(db.Model):
 class TipoExame(db.Model):
     __tablename__ = 'tipos_exame'
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False) # Caso seu MySQL use 'nome', mude para nome
+    nome = db.Column(db.String(100), nullable=False)
 
 class Exame(db.Model):
     __tablename__ = 'exames'
@@ -458,6 +460,57 @@ class Despesa(db.Model):
             'data_pagamento': self.data_pagamento.isoformat() if self.data_pagamento else None,
             'status': self.status
         }
+
+# ════════════════════════════════════════════════════════════
+# TABELA DE PREÇOS — Particular e Convênio
+# ════════════════════════════════════════════════════════════
+class PrecoConsulta(db.Model):
+    __tablename__ = 'precos_consulta'
+    __table_args__ = (
+        db.UniqueConstraint('tipo_consulta', 'modalidade', 'nome_convenio', name='uq_preco_consulta'),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    tipo_consulta = db.Column(db.String(50), nullable=False)   # 1ª Consulta, Retorno, Urgência
+    modalidade = db.Column(db.String(20), nullable=False)       # Particular | Convenio
+    nome_convenio = db.Column(db.String(100), nullable=True)    # NULL quando Particular
+    valor = db.Column(db.Float, nullable=False)
+    ativo = db.Column(db.Boolean, default=True)
+    data_atualizacao = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'tipo_consulta': self.tipo_consulta,
+            'modalidade': self.modalidade,
+            'nome_convenio': self.nome_convenio,
+            'valor': self.valor,
+            'ativo': self.ativo,
+            'data_atualizacao': self.data_atualizacao.isoformat() if self.data_atualizacao else None,
+            'label': self._label()
+        }
+
+    def _label(self):
+        if self.modalidade == 'Particular':
+            return f'{self.tipo_consulta} — Particular'
+        return f'{self.tipo_consulta} — {self.nome_convenio or "Convênio"}'
+
+    @staticmethod
+    def normalizar_convenio(convenio):
+        if not convenio or str(convenio).strip().lower() in ('particular', ''):
+            return None
+        return str(convenio).strip()
+
+    @classmethod
+    def buscar(cls, tipo_consulta, convenio=None):
+        nome = cls.normalizar_convenio(convenio)
+        modalidade = 'Particular' if nome is None else 'Convenio'
+        return cls.query.filter_by(
+            tipo_consulta=tipo_consulta,
+            modalidade=modalidade,
+            nome_convenio=nome,
+            ativo=True
+        ).first()
 
 # ════════════════════════════════════════════════════════════
 # MENSAGENS INTERNAS

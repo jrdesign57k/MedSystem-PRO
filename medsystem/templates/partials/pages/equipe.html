@@ -1,11 +1,50 @@
 <div id="page-equipe" class="page">
   <div class="page-header">
-    <div><div class="page-title">Equipe Médica</div><div class="page-sub">Gestão de colaboradores e agenda</div></div>
-    <div class="header-actions">
-      <button class="btn btn-primary" onclick="showToast('Formulário de novo profissional aberto','info')">+ Novo Profissional</button>
+    <div><div class="page-title">Usuários & Equipe</div><div class="page-sub">Gestão de acessos e profissionais</div></div>
+    <div class="header-actions" id="equipe-acoes-criar" style="display:none">
+      <button class="btn btn-primary" onclick="toggleFormUsuario(true)">+ Novo Usuário</button>
     </div>
   </div>
-  <div class="card mb16">
+
+  <div class="card mb16" id="form-usuario-box" style="display:none">
+    <div class="card-header"><span class="card-title">Cadastrar novo usuário</span></div>
+    <div class="card-body">
+      <div class="form-grid">
+        <div class="form-group"><label>Nome <span class="req">*</span></label><input id="nu-nome" type="text" placeholder="Nome completo"/></div>
+        <div class="form-group"><label>E-mail <span class="req">*</span></label><input id="nu-email" type="email" placeholder="email@medsystem.com"/></div>
+        <div class="form-group"><label>Senha <span class="req">*</span></label><input id="nu-senha" type="password" placeholder="Mín. 8 caracteres"/></div>
+        <div class="form-group">
+          <label>Perfil <span class="req">*</span></label>
+          <select id="nu-tipo" onchange="toggleCamposMedicoUsuario()">
+            <option value="recepcao">Recepção</option>
+            <option value="medico">Médico</option>
+            <option value="admin" id="nu-tipo-admin">Administrador</option>
+          </select>
+        </div>
+        <div class="form-group" id="nu-crm-group" style="display:none"><label>CRM <span class="req">*</span></label><input id="nu-crm" type="text" placeholder="SP123456"/></div>
+        <div class="form-group" id="nu-esp-group" style="display:none"><label>Especialidade <span class="req">*</span></label><select id="nu-especialidade"><option value="">Carregando...</option></select></div>
+      </div>
+      <div style="margin-top:16px;display:flex;gap:8px">
+        <button class="btn btn-primary" onclick="novoUsuario()">Salvar usuário</button>
+        <button class="btn btn-outline" onclick="toggleFormUsuario(false)">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb16" id="secao-usuarios-sistema" style="display:none">
+    <div class="card-header"><span class="card-title">Usuários do sistema</span></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Status</th><th id="th-usuarios-acoes" style="display:none">Ações</th></tr></thead>
+        <tbody id="tabela-usuarios">
+          <tr><td colspan="5" style="text-align:center;color:var(--text4)">Carregando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><span class="card-title">Médicos da equipe</span></div>
     <div class="table-wrap">
       <table id="tabela-equipe">
         <thead><tr><th>Nome</th><th>CRM</th><th>Especialidade</th><th>Status</th></tr></thead>
@@ -13,47 +52,4 @@
       </table>
     </div>
   </div>
-  <div class="three-col" style="display:none">
-    <div class="card">
-      <div class="patient-header" style="background:linear-gradient(135deg,#1a56db,#1e3a8a)">
-        <div class="patient-avatar-lg">DM</div>
-        <div class="patient-name">Dr. Carlos Mendonça</div>
-        <div class="patient-meta"><span>Clínico Geral</span><span>CRM 12345</span></div>
-      </div>
-      <div class="patient-body">
-        <div class="info-row"><span class="info-key">Especialidade</span><span class="info-val">Clínica Geral</span></div>
-        <div class="info-row"><span class="info-key">Status</span><span class="info-val"><span class="badge badge-green">Online</span></span></div>
-        <div class="info-row"><span class="info-key">Consultas mês</span><span class="info-val" style="font-weight:700">28</span></div>
-        <div class="info-row"><span class="info-key">Próxima agenda</span><span class="info-val td-mono">Hoje 11:00</span></div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="patient-header" style="background:linear-gradient(135deg,var(--green),var(--green-light))">
-        <div class="patient-avatar-lg">AF</div>
-        <div class="patient-name">Dra. Ana Ferreira</div>
-        <div class="patient-meta"><span>Cardiologia</span><span>CRM 67890</span></div>
-      </div>
-      <div class="patient-body">
-        <div class="info-row"><span class="info-key">Especialidade</span><span class="info-val">Cardiologia</span></div>
-        <div class="info-row"><span class="info-key">Status</span><span class="info-val"><span class="badge badge-green">Online</span></span></div>
-        <div class="info-row"><span class="info-key">Consultas mês</span><span class="info-val" style="font-weight:700">22</span></div>
-        <div class="info-row"><span class="info-key">Próxima agenda</span><span class="info-val td-mono">Hoje 14:30</span></div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="patient-header" style="background:linear-gradient(135deg,var(--purple),var(--purple-light))">
-        <div class="patient-avatar-lg">BL</div>
-        <div class="patient-name">Dra. Beatriz Lima</div>
-        <div class="patient-meta"><span>Endocrinologia</span><span>CRM 44321</span></div>
-      </div>
-      <div class="patient-body">
-        <div class="info-row"><span class="info-key">Especialidade</span><span class="info-val">Endocrinologia</span></div>
-        <div class="info-row"><span class="info-key">Status</span><span class="info-val"><span class="badge badge-amber">Em consulta</span></span></div>
-        <div class="info-row"><span class="info-key">Consultas mês</span><span class="info-val" style="font-weight:700">12</span></div>
-        <div class="info-row"><span class="info-key">Próxima agenda</span><span class="info-val td-mono">Amanhã 08:00</span></div>
-      </div>
-    </div>
-  </div>
 </div>
-
-<!-- ═══════════════════════════════════ MENSAGENS ═══════════════════════════════════ -->

@@ -5,7 +5,7 @@ from flask import Blueprint, request, jsonify, redirect
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from extensions import db
 from models import Usuario, Medico, LogAuditoria
-from decorators import admin_required
+from decorators import admin_required, role_required
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -77,9 +77,12 @@ def obter_perfil():
 
 @auth_bp.route('/register', methods=['POST'])
 @jwt_required()
-@admin_required
 def registrar():
     try:
+        criador = Usuario.query.get(int(get_jwt_identity()))
+        if not criador or criador.tipo not in ('admin', 'medico'):
+            return jsonify({'sucesso': False, 'mensagem': 'Acesso negado'}), 403
+
         dados = request.get_json()
         if not dados.get('email') or not dados.get('senha') or not dados.get('nome'):
             return jsonify({'sucesso': False, 'mensagem': 'Dados obrigatórios faltando'}), 400
@@ -91,6 +94,8 @@ def registrar():
             return jsonify({'sucesso': False, 'mensagem': 'Email já cadastrado'}), 409
             
         tipo_usuario = dados.get('tipo', 'recepcao')
+        if criador.tipo == 'medico' and tipo_usuario == 'admin':
+            return jsonify({'sucesso': False, 'mensagem': 'Médicos não podem criar usuários administradores'}), 403
         
         # 1. Cria o login (Usuario)
         novo_usuario = Usuario(nome=dados['nome'], email=dados['email'], tipo=tipo_usuario, ativo=True)
@@ -133,7 +138,7 @@ def registrar():
 
 @auth_bp.route('/usuarios', methods=['GET'])
 @jwt_required()
-@admin_required
+@role_required('admin', 'medico')
 def listar_usuarios():
     try:
         # Puxa APENAS os usuários ativos

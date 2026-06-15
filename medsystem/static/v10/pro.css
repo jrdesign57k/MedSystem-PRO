@@ -138,6 +138,8 @@ body { font-family:var(--font); background:var(--bg); color:var(--text); min-hei
 .topbar-search svg { width:15px; height:15px; stroke:var(--text3); flex-shrink:0; }
 .topbar-search input { border:none; background:none; font-family:var(--font); font-size:13px; color:var(--text); outline:none; flex:1; }
 .topbar-search input::placeholder { color:var(--text4); }
+.topbar-search-hint { font-size:11px;color:var(--text4);font-family:var(--mono); }
+.topbar-datetime { display:flex;flex-direction:column;align-items:flex-end;margin-right:4px; }
 
 .topbar-right { margin-left:auto; display:flex; align-items:center; gap:8px; }
 .topbar-btn {
@@ -366,6 +368,19 @@ textarea { resize:vertical; min-height:72px; }
 .vital-warn .vital-val { color:var(--amber-light); }
 .vital-alert .vital-val { color:var(--red-light); }
 .vital-norm .vital-val { color:var(--text); }
+.vital-val-input {
+  border:none;background:transparent;width:100%;text-align:center;
+  font-size:22px;font-weight:700;margin:5px 0 2px;letter-spacing:-.5px;
+  color:var(--text);outline:none;font-family:inherit;
+}
+.vital-val-input::placeholder { color:var(--text4); font-weight:400; font-size:16px; }
+.vital-item.vital-ok .vital-val-input { color:var(--green-light); }
+.vital-item.vital-warn .vital-val-input { color:var(--amber-light); }
+.vital-item.vital-alert .vital-val-input { color:var(--red-light); }
+.pront-patient-strip .patient-avatar-lg {
+  width:48px;height:48px;border-radius:50%;background:var(--blue-pale);color:var(--blue-mid);
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;
+}
 
 /* ── ALLERGY / TAGS ── */
 .allergy-tag {
@@ -397,8 +412,9 @@ textarea { resize:vertical; min-height:72px; }
 
 /* ── AGENDA / CALENDAR ── */
 .agenda-grid {
-  display:grid; grid-template-columns:80px repeat(5,1fr); gap:1px;
+  display:grid; grid-template-columns:80px repeat(7,1fr); gap:1px;
   background:var(--border); border:1px solid var(--border); border-radius:var(--r-lg); overflow:hidden;
+  overflow-x:auto;
 }
 .agenda-cell {
   background:var(--surface); padding:8px; min-height:48px;
@@ -420,6 +436,48 @@ textarea { resize:vertical; min-height:72px; }
 .appt.purple{ background:var(--purple-pale);border-color:var(--purple-light); }
 .appt-name  { font-weight:600; color:var(--text); }
 .appt-info  { color:var(--text3); }
+.appt-reservado { font-size:9px; text-transform:uppercase; letter-spacing:.04em; color:var(--text4); margin-top:2px; }
+
+/* ── SELEÇÃO DE HORÁRIO (modal consulta) ── */
+.hora-slots-grid {
+  display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:6px;
+}
+.hora-slots-hint {
+  grid-column:1/-1; padding:12px; text-align:center; font-size:12px; color:var(--text3);
+  background:var(--surface2); border-radius:var(--r); border:1px dashed var(--border);
+}
+.hora-slot-btn {
+  padding:10px 8px; border:1px solid var(--border); border-radius:var(--r);
+  background:var(--surface2); cursor:pointer; text-align:center; transition:.15s;
+}
+button.hora-slot-btn:hover { border-color:var(--blue-mid); background:var(--blue-pale); }
+.hora-slot-btn.selecionado {
+  border-color:var(--blue-mid); background:var(--blue-pale);
+  box-shadow:0 0 0 2px rgba(59,130,246,.25);
+}
+.hora-slot-btn.ocupado {
+  background:var(--surface3); border-color:var(--border);
+  cursor:not-allowed; opacity:.85;
+}
+.hora-slot-hora { font-family:var(--mono); font-weight:700; font-size:14px; color:var(--text); }
+.hora-slot-status { font-size:10px; color:var(--green-light); margin-top:3px; font-weight:600; }
+.hora-slot-btn.ocupado .hora-slot-hora { color:var(--text3); }
+.hora-slot-btn.ocupado .hora-slot-status { color:var(--red-light); }
+
+/* ── PRONTUÁRIO ── */
+.pront-patient-card .patient-avatar-lg {
+  width:56px;height:56px;border-radius:50%;background:var(--blue-pale);color:var(--blue-mid);
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;flex-shrink:0;
+}
+.vital-input {
+  width:100%;border:none;background:transparent;text-align:center;font-family:var(--mono);
+  font-size:18px;font-weight:700;color:var(--text);outline:none;
+}
+.vital-input::placeholder { color:var(--text4); font-weight:400; font-size:14px; }
+
+@media (max-width:480px) {
+  .hora-slots-grid { grid-template-columns:repeat(2,1fr); }
+}
 
 /* ── PRESCRIPTION ── */
 .rx-item {
@@ -487,16 +545,20 @@ textarea { resize:vertical; min-height:72px; }
 .pill-label.red { background:var(--red-pale); color:var(--red); }
 
 /* ── NOTIFICATION PANEL ── */
+.notif-wrap { position:relative; }
 .notif-panel {
-  position:absolute; top:48px; right:0; width:340px;
+  position:absolute; top:calc(100% + 8px); right:0; width:min(340px, calc(100vw - 24px));
   background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg);
-  box-shadow:var(--shadow-lg); z-index:300; overflow:hidden; display:none;
+  box-shadow:var(--shadow-lg); z-index:400; overflow:hidden; display:none;
+  max-height:min(420px, 70vh);
 }
-.notif-panel.open { display:block; animation:fadein .15s ease; }
-.notif-header { padding:12px 16px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
-.notif-item { padding:12px 16px; border-bottom:1px solid var(--border); display:flex; gap:10px; cursor:pointer; transition:.1s; }
+.notif-panel.open { display:flex; flex-direction:column; animation:fadein .15s ease; }
+.notif-header { padding:12px 16px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; flex-shrink:0; }
+#notifList { overflow-y:auto; -webkit-overflow-scrolling:touch; flex:1; min-height:0; }
+.notif-item { padding:12px 16px; border-bottom:1px solid var(--border); display:flex; gap:10px; cursor:pointer; transition:.1s; align-items:flex-start; }
 .notif-item:hover { background:var(--surface2); }
 .notif-item:last-child { border-bottom:none; }
+.notif-empty { padding:20px 16px; text-align:center; color:var(--text4); font-size:13px; }
 .notif-icon { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
 .notif-icon svg { width:15px; height:15px; stroke:#fff; fill:none; }
 .notif-text { font-size:12.5px; color:var(--text); line-height:1.4; }
@@ -565,16 +627,22 @@ textarea { resize:vertical; min-height:72px; }
   .page-header { flex-direction:column; align-items:flex-start; gap:12px; }
   .header-actions { flex-wrap:wrap; width:100%; }
   .header-actions .btn { flex:1; justify-content:center; }
-  .topbar { padding-right:14px; gap:8px; }
+  .topbar { padding-right:14px; gap:8px; overflow:visible; }
   .topbar-search { max-width:none; }
-  .topbar-clock, .topbar-date { display:none; }
+  .topbar-search-hint { display:none; }
+  .topbar-clock, .topbar-date, .topbar-datetime { display:none; }
+  .topbar-sep { display:none; }
   table { font-size:12px; }
   .modal { width:94vw; max-width:94vw; }
   .form-grid, .form-grid-3 { grid-template-columns:1fr; }
-  /* abas roláveis sem quebrar o layout */
   .tabs { width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; }
-  /* evita o zoom automático do iOS ao focar campos */
   input, select, textarea { font-size:16px; }
-  /* notificações ocupam quase a tela toda */
-  .notif-panel { width:calc(100vw - 24px); right:-8px; }
+  .notif-panel {
+    position:fixed;
+    top:calc(var(--topbar-h) + 6px);
+    left:12px;
+    right:12px;
+    width:auto;
+    max-height:min(65vh, 400px);
+  }
 }

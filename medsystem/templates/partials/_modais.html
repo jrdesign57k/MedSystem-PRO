@@ -14,12 +14,29 @@
           <select id="nc-med"><option value="">Carregando médicos...</option></select>
         </div>
         <div class="form-group"><label>Data <span class="req">*</span></label><input id="nc-data" type="date"/></div>
-        <div class="form-group"><label>Hora <span class="req">*</span></label><input id="nc-hora" type="time" value="09:00"/></div>
-        <div class="form-group"><label>Tipo de Consulta</label>
-          <select id="nc-tipo"><option>1ª Consulta</option><option>Retorno</option><option>Urgência</option><option>Exame</option></select>
+        <div class="form-group full">
+          <label>Horário <span class="req">*</span></label>
+          <input type="hidden" id="nc-hora" value=""/>
+          <div id="nc-horarios-slots" class="hora-slots-grid">
+            <div class="hora-slots-hint">Selecione médico e data para ver os horários</div>
+          </div>
         </div>
-        <div class="form-group"><label>Convênio</label>
-          <select id="nc-convenio"><option>Particular</option><option>Unimed</option><option>SulAmérica</option></select>
+        <div class="form-group"><label>Tipo de Consulta</label>
+          <select id="nc-tipo" onchange="atualizarPreviewPrecoAgendamento()">
+            <option value="1ª Consulta">1ª Consulta</option>
+            <option value="Retorno">Retorno</option>
+            <option value="Urgência">Urgência</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Convênio / Particular</label>
+          <select id="nc-convenio" onchange="atualizarPreviewPrecoAgendamento()">
+            <option value="Particular">Particular</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <div id="nc-preco-preview" style="padding:10px 14px;background:var(--surface2);border-radius:8px;border:1px solid var(--border);font-size:13px">
+            <strong>Valor estimado:</strong> <span id="nc-preco-valor">—</span>
+          </div>
         </div>
         <div class="form-group full"><label>Motivo / Queixa Principal <span class="req">*</span></label><input id="nc-motivo" placeholder="Descreva brevemente o motivo da consulta"/></div>
         <div class="form-group full"><label>Observações</label><textarea id="nc-obs" placeholder="Informações adicionais..." style="min-height:60px"></textarea></div>

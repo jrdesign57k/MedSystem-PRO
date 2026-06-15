@@ -67,7 +67,17 @@ function showToast(msg, type) {
 
 function openModal(id) { document.getElementById(id)?.classList.add('open'); }
 function closeModal(id) { document.getElementById(id)?.classList.remove('open'); }
-function toggleNotif() { document.getElementById('notifPanel')?.classList.toggle('open'); }
+function toggleNotif() {
+  const panel = document.getElementById('notifPanel');
+  if (!panel) return;
+  const abrir = !panel.classList.contains('open');
+  panel.classList.toggle('open');
+  if (abrir && typeof carregarNotificacoes === 'function') carregarNotificacoes();
+}
+function irParaEquipe() {
+  if (typeof showPage === 'function') showPage('equipe');
+}
+window.irParaEquipe = irParaEquipe;
 function filtrarTabela(tblId, val) {
   document.querySelectorAll('#' + tblId + ' tbody tr').forEach(r => {
     r.style.display = r.textContent.toLowerCase().includes(val.toLowerCase()) ? '' : 'none';

@@ -4,11 +4,78 @@ MedSystem Consultas Routes - Fluxo completo de consultas
 
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from app import db
-from models import Consulta, Paciente, Medico, Exame, LogAuditoria, SinalVital, Diagnostico, Prescricao
-from datetime import datetime
+from extensions import db
+from models import Consulta, Paciente, Medico, Exame, LogAuditoria, SinalVital, Diagnostico, Prescricao, Receita, PrecoConsulta
+from datetime import datetime, timedelta
 
 consultas_bp = Blueprint('consultas', __name__)
+
+TIPOS_COM_PRECO = ['1ª Consulta', 'Retorno', 'Urgência']
+HORARIOS_AGENDA = ['08:00', '09:30', '11:00', '14:00', '15:30', '17:00']
+STATUS_ATIVOS = ['AGENDADA', 'EM_ATENDIMENTO', 'EM_ANDAMENTO', 'CONCLUIDA']
+
+
+def _normalizar_hora(hora):
+    if not hora:
+        return None
+    h = str(hora).strip()[:5]
+    if len(h) == 5 and h[2] == ':':
+        return h
+    return None
+
+
+def _inicio_fim_dia(data_dt):
+    inicio = data_dt.replace(hour=0, minute=0, second=0, microsecond=0)
+    return inicio, inicio + timedelta(days=1)
+
+
+def _consulta_no_horario(id_medico, data_dt, hora):
+    """Retorna consulta ativa no mesmo médico/data/hora, ou None."""
+    hora_norm = _normalizar_hora(hora)
+    if not hora_norm:
+        return None
+    inicio, fim = _inicio_fim_dia(data_dt)
+    consultas = Consulta.query.filter(
+        Consulta.id_medico == id_medico,
+        Consulta.data_consulta >= inicio,
+        Consulta.data_consulta < fim,
+        Consulta.status.in_(STATUS_ATIVOS)
+    ).all()
+    for c in consultas:
+        c_hora = _normalizar_hora(c.hora_consulta) or _normalizar_hora(
+            c.data_consulta.strftime('%H:%M') if c.data_consulta else None
+        )
+        if c_hora == hora_norm:
+            return c
+    return None
+
+
+def _criar_receita_agendamento(consulta, paciente, tipo_consulta, convenio):
+    """Gera receita pendente com valor da tabela de preços."""
+    if tipo_consulta not in TIPOS_COM_PRECO:
+        return None, 'Tipo de consulta sem tabela de preços — receita não gerada'
+
+    existente = Receita.query.filter_by(id_consulta=consulta.id_consulta).first()
+    if existente:
+        return existente, None
+
+    preco = PrecoConsulta.buscar(tipo_consulta, convenio)
+    if not preco:
+        return None, f'Preço não cadastrado para {tipo_consulta} / {convenio or "Particular"}'
+
+    convenio_norm = PrecoConsulta.normalizar_convenio(convenio)
+    receita = Receita(
+        id_consulta=consulta.id_consulta,
+        id_paciente=consulta.id_paciente,
+        id_medico=consulta.id_medico,
+        descricao=f'{tipo_consulta} — {paciente.nome}',
+        valor=preco.valor,
+        tipo='Particular' if convenio_norm is None else 'Convênio',
+        convenio=convenio if convenio_norm else 'Particular',
+        status='PENDENTE'
+    )
+    db.session.add(receita)
+    return receita, None
 
 # ════════════════════════════════════════════════════════════
 # GET /api/consultas
@@ -115,6 +182,64 @@ def consultas_paciente(id_paciente):
         }), 500
 
 # ════════════════════════════════════════════════════════════
+# GET /api/consultas/horarios-disponiveis
+# Horários do médico em uma data (livres x reservados)
+# ════════════════════════════════════════════════════════════
+@consultas_bp.route('/horarios-disponiveis', methods=['GET'])
+@jwt_required()
+def horarios_disponiveis():
+    try:
+        id_medico = request.args.get('id_medico', type=int)
+        data_str = request.args.get('data')
+        if not id_medico or not data_str:
+            return jsonify({'sucesso': False, 'mensagem': 'Informe id_medico e data (YYYY-MM-DD)'}), 400
+
+        medico = Medico.query.get(id_medico)
+        if not medico:
+            return jsonify({'sucesso': False, 'mensagem': 'Médico não encontrado'}), 404
+
+        data_dt = datetime.fromisoformat(data_str + 'T00:00:00')
+        inicio, fim = _inicio_fim_dia(data_dt)
+        consultas = Consulta.query.filter(
+            Consulta.id_medico == id_medico,
+            Consulta.data_consulta >= inicio,
+            Consulta.data_consulta < fim,
+            Consulta.status.in_(STATUS_ATIVOS)
+        ).all()
+
+        ocupados = {}
+        for c in consultas:
+            h = _normalizar_hora(c.hora_consulta) or _normalizar_hora(
+                c.data_consulta.strftime('%H:%M') if c.data_consulta else None
+            )
+            if h:
+                ocupados[h] = {
+                    'paciente': c.paciente.nome if c.paciente else 'Paciente',
+                    'status': c.status
+                }
+
+        horarios = []
+        for h in HORARIOS_AGENDA:
+            if h in ocupados:
+                horarios.append({
+                    'hora': h,
+                    'disponivel': False,
+                    'paciente': ocupados[h]['paciente'],
+                    'status': ocupados[h]['status']
+                })
+            else:
+                horarios.append({'hora': h, 'disponivel': True})
+
+        return jsonify({
+            'sucesso': True,
+            'horarios': horarios,
+            'data': data_str,
+            'id_medico': id_medico
+        }), 200
+    except Exception as e:
+        return jsonify({'sucesso': False, 'mensagem': str(e)}), 500
+
+# ════════════════════════════════════════════════════════════
 # POST /api/consultas
 # Agendar nova consulta 
 # ════════════════════════════════════════════════════════════
@@ -147,17 +272,43 @@ def agendar_consulta():
         
         # START TRANSACTION
         try:
+            tipo_consulta = dados.get('tipo_consulta', '1ª Consulta')
+            convenio = dados.get('convenio', 'Particular')
+            hora_consulta = _normalizar_hora(dados.get('hora_consulta'))
+            data_consulta = datetime.fromisoformat(dados['data_consulta'])
+
+            if not hora_consulta:
+                return jsonify({'sucesso': False, 'mensagem': 'Horário inválido'}), 400
+            if hora_consulta not in HORARIOS_AGENDA:
+                return jsonify({'sucesso': False, 'mensagem': 'Horário fora da grade de atendimento'}), 400
+
+            conflito = _consulta_no_horario(dados['id_medico'], data_consulta, hora_consulta)
+            if conflito:
+                pac = conflito.paciente.nome if conflito.paciente else 'outro paciente'
+                return jsonify({
+                    'sucesso': False,
+                    'mensagem': f'Horário {hora_consulta} já reservado para {pac}'
+                }), 409
+
             consulta = Consulta(
                 id_paciente=dados['id_paciente'],
                 id_medico=dados['id_medico'],
-                data_consulta=datetime.fromisoformat(dados['data_consulta']),
+                data_consulta=data_consulta,
+                hora_consulta=hora_consulta,
+                motivo=dados.get('motivo'),
+                tipo_consulta=tipo_consulta,
+                convenio=convenio,
+                observacoes_consulta=dados.get('observacoes'),
                 status='AGENDADA'
             )
             
             db.session.add(consulta)
-            db.session.flush()  # Gera o ID antes do commit definitivo
+            db.session.flush()
+
+            receita, aviso_preco = _criar_receita_agendamento(
+                consulta, paciente, tipo_consulta, convenio
+            )
             
-            # Grava no log de auditoria usando a chave certa: id_consulta
             log = LogAuditoria(
                 tabela='consulta',
                 operacao='INSERT',
@@ -165,13 +316,20 @@ def agendar_consulta():
                 detalhe=f'Consulta agendada: {paciente.nome} com {medico.usuario.nome}'
             )
             db.session.add(log)
-            db.session.commit()  # ✓ COMMIT
+            db.session.commit()
             
-            return jsonify({
+            resposta = {
                 'sucesso': True,
                 'mensagem': 'Consulta agendada com sucesso',
                 'dados': consulta.to_dict()
-            }), 201
+            }
+            if receita:
+                resposta['receita'] = receita.to_dict()
+                resposta['mensagem'] += f' — Receita de R$ {receita.valor:.2f} gerada'
+            elif aviso_preco:
+                resposta['aviso_preco'] = aviso_preco
+
+            return jsonify(resposta), 201
             
         except Exception as e:
             db.session.rollback()  # ✗ ROLLBACK
@@ -224,7 +382,7 @@ def registrar_sinais_vitais(id):
             db.session.add(sinal)
             
             # Marcar consulta como em andamento
-            consulta.status = 'EM_ANDAMENTO'
+            consulta.status = 'EM_ATENDIMENTO'
             db.session.flush()
             
             # Log auditoria
@@ -346,7 +504,7 @@ def atualizar_status_consulta(id):
         dados = request.get_json()
         novo_status = dados.get('status', '').upper()
         
-        if novo_status not in ['AGENDADA', 'EM_ANDAMENTO', 'CONCLUIDA', 'CANCELADA']:
+        if novo_status not in ['AGENDADA', 'EM_ATENDIMENTO', 'EM_ANDAMENTO', 'CONCLUIDA', 'CANCELADA']:
             return jsonify({
                 'sucesso': False,
                 'mensagem': 'Status inválido'

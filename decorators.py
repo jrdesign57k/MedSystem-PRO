@@ -21,7 +21,7 @@ def role_required(*roles):
         def wrapper(*args, **kwargs):
             try:
                 user_id = get_jwt_identity()
-                usuario = Usuario.query.get(user_id)
+                usuario = Usuario.query.get(int(user_id))
                 
                 if not usuario:
                     return jsonify({

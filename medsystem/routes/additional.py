@@ -195,6 +195,8 @@ def obter_estatisticas():
         ultimas_list = []
         for c in ultimas_consultas:
             ultimas_list.append({
+                'id_consulta': c.id_consulta,
+                'id_paciente': c.id_paciente,
                 'paciente_nome': c.paciente.nome if c.paciente else 'N/A',
                 'data': c.data_consulta.isoformat() if c.data_consulta else None,
                 'hora': c.hora_consulta or '—',
@@ -221,37 +223,53 @@ def obter_estatisticas():
 @dashboard_bp.route('/alertas', methods=['GET'])
 @jwt_required()
 def obter_alertas():
-    """Retorna alertas clínicos (diagnósticos graves)"""
+    """Alertas clínicos por classificação de risco (baixo, médio, alto, crítico)."""
     try:
-        # Diagnósticos graves/críticos
-        diagnosticos_graves = Diagnostico.query.filter(
-            Diagnostico.gravidade.in_(['GRAVE', 'CRITICA'])
+        ordem = {'CRITICA': 0, 'GRAVE': 1, 'MODERADA': 2, 'LEVE': 3}
+        rotulos = {
+            'LEVE': 'RISCO BAIXO',
+            'MODERADA': 'RISCO MÉDIO',
+            'GRAVE': 'RISCO ALTO',
+            'CRITICA': 'RISCO CRÍTICO',
+        }
+
+        diagnosticos = Diagnostico.query.filter(
+            Diagnostico.status == 'ATIVO',
+            Diagnostico.gravidade.in_(['LEVE', 'MODERADA', 'GRAVE', 'CRITICA'])
         ).all()
-        
+
         alertas = []
-        for diag in diagnosticos_graves:
+        for diag in diagnosticos:
             consulta = Consulta.query.get(diag.id_consulta)
             if not consulta:
                 continue
-                
-            paciente = Paciente.query.get(consulta.id_paciente)
-            if not paciente:
+            paciente = Paciente.query.get(diag.id_paciente)
+            if not paciente or not paciente.ativo:
                 continue
-                
+
+            grav = (diag.gravidade or 'LEVE').upper()
+            if grav not in rotulos:
+                grav = 'LEVE'
+
             alertas.append({
                 'paciente': paciente.nome,
-                'tipo': 'DIAGNÓSTICO GRAVE',
-                'descricao': diag.descricao,
-                'gravidade': diag.gravidade,
-                'data': consulta.data_consulta.isoformat() if consulta.data_consulta else None
+                'id_paciente': paciente.id_paciente,
+                'id_consulta': diag.id_consulta,
+                'tipo': rotulos[grav],
+                'descricao': f'{diag.cid} — {diag.descricao}',
+                'gravidade': grav,
+                'cid': diag.cid,
+                'data': consulta.data_consulta.isoformat() if consulta.data_consulta else None,
             })
-        
+
+        alertas.sort(key=lambda a: (ordem.get(a['gravidade'], 9), a['paciente']))
+
         return jsonify({
             'sucesso': True,
             'total': len(alertas),
-            'dados': alertas
+            'dados': alertas,
         }), 200
-        
+
     except Exception as e:
         return jsonify({
             'sucesso': False,
@@ -275,7 +293,8 @@ def agenda_semanal():
 
             consultas = Consulta.query.filter(
                 Consulta.data_consulta >= inicio,
-                Consulta.data_consulta < fim
+                Consulta.data_consulta < fim,
+                Consulta.status != 'CANCELADA'
             ).all()
 
             consultas_list = []
@@ -444,7 +463,9 @@ def grafico_classificacao_risco():
         }
         
         for diag in diagnosticos:
-            gravidade = diag.gravidade or 'LEVE'
+            gravidade = (diag.gravidade or 'LEVE').upper()
+            if gravidade == 'CRÍTICA':
+                gravidade = 'CRITICA'
             if gravidade in gravidade_count:
                 gravidade_count[gravidade] += 1
         
@@ -464,7 +485,7 @@ def grafico_classificacao_risco():
         ).join(
             Consulta, Paciente.id_paciente == Consulta.id_paciente
         ).join(
-            Diagnostico, Consulta.id == Diagnostico.id_consulta
+            Diagnostico, Consulta.id_consulta == Diagnostico.id_consulta
         ).filter(
             Diagnostico.gravidade.in_(['GRAVE', 'CRITICA'])
         ).group_by(Paciente.id_paciente).all()
@@ -484,7 +505,7 @@ def grafico_classificacao_risco():
             tendencia_diaria[data_key] = 0
         
         diags_recentes = Diagnostico.query.join(
-            Consulta, Diagnostico.id_consulta == Consulta.id
+            Consulta, Diagnostico.id_consulta == Consulta.id_consulta
         ).filter(
             Diagnostico.gravidade.in_(['GRAVE', 'CRITICA']),
             Consulta.data_consulta >= (datetime.now() - timedelta(days=7))

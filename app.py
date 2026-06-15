@@ -73,6 +73,8 @@ def create_app():
 
         # ──── CRIAÇÃO DO BANCO E DADOS INICIAIS ────
         try:
+            from medsystem.database.schema_upgrade import upgrade_schema
+            upgrade_schema()
             db.create_all()
 
             # Inserção automática de Especialidades
@@ -94,6 +96,24 @@ def create_app():
                     print("✓ 8 Especialidades médicas inseridas com sucesso!")
             except Exception as esp_err:
                 print(f"ℹ Nota: {esp_err}")
+
+            # Tabela de preços (Particular e Convênio)
+            from models import PrecoConsulta
+            if not PrecoConsulta.query.first():
+                precos_padrao = [
+                    PrecoConsulta(tipo_consulta='1ª Consulta', modalidade='Particular', nome_convenio=None, valor=250.0),
+                    PrecoConsulta(tipo_consulta='Retorno', modalidade='Particular', nome_convenio=None, valor=150.0),
+                    PrecoConsulta(tipo_consulta='Urgência', modalidade='Particular', nome_convenio=None, valor=350.0),
+                    PrecoConsulta(tipo_consulta='1ª Consulta', modalidade='Convenio', nome_convenio='Unimed', valor=120.0),
+                    PrecoConsulta(tipo_consulta='Retorno', modalidade='Convenio', nome_convenio='Unimed', valor=80.0),
+                    PrecoConsulta(tipo_consulta='1ª Consulta', modalidade='Convenio', nome_convenio='SulAmérica', valor=110.0),
+                    PrecoConsulta(tipo_consulta='Retorno', modalidade='Convenio', nome_convenio='SulAmérica', valor=75.0),
+                    PrecoConsulta(tipo_consulta='1ª Consulta', modalidade='Convenio', nome_convenio='Bradesco Saúde', valor=115.0),
+                    PrecoConsulta(tipo_consulta='Retorno', modalidade='Convenio', nome_convenio='Bradesco Saúde', valor=78.0),
+                ]
+                db.session.bulk_save_objects(precos_padrao)
+                db.session.commit()
+                print("✓ Tabela de preços (Particular/Convênio) criada!")
 
             # Criação do usuário Administrador Principal
             admin = Usuario.query.filter_by(email='medico@medsystem.com').first()
@@ -128,6 +148,9 @@ def create_app():
                 db.session.add(medico_record)
 
             db.session.commit()
+
+            from medsystem.database.seed_demo import executar_seeds
+            executar_seeds()
 
         except Exception as e:
             print(f"⚠️ Erro silencioso no banco (tabelas já existem ou ajuste pendente): {e}")
