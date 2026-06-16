@@ -194,6 +194,10 @@ function doLogout() {
 // ══════════════════════════════════════
 // BUSCAS NA API (GET)
 // ══════════════════════════════════════
+function fmtMoedaDash(v) {
+  return 'R$ ' + Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+
 async function carregarDashboard() {
   try {
     const token = localStorage.getItem('token');
@@ -204,41 +208,88 @@ async function carregarDashboard() {
     });
     const json = await res.json();
 
-    if (json.sucesso) {
-      const d = json.dados;
-      setMetricValue('consultas_hoje', d.consultas_hoje);
-      setMetricValue('pacientes_ativos', d.pacientes_ativos);
-      setMetricValue('exames_pendentes', d.exames_pendentes);
+    if (!res.ok || !json.sucesso) {
+      showToast(json.mensagem || 'Erro ao carregar dashboard', 'error');
+      console.error('Dashboard API:', json);
+      return;
+    }
 
-      const tbodyDash = document.querySelector('#tabela-dash-consultas tbody')
-        || document.querySelector('#agenda-hoje-tbody');
-      if (tbodyDash) {
-        if (d.ultimas_consultas && d.ultimas_consultas.length > 0) {
-          tbodyDash.innerHTML = '';
-          d.ultimas_consultas.forEach(c => {
-            const cols = tbodyDash.closest('table')?.querySelectorAll('thead th').length || 3;
-            if (cols >= 5) {
-              tbodyDash.innerHTML += `
-                <tr>
-                  <td class="td-mono">${c.hora || '—'}</td>
-                  <td class="td-name">${c.paciente_nome}</td>
-                  <td><span class="badge badge-blue">${c.tipo || 'Consulta'}</span></td>
-                  <td><span class="badge badge-amber">${c.status}</span></td>
-                  <td><button class="btn btn-ghost btn-sm btn-prontuario" onclick="abrirProntuario(${c.id_paciente || 0}, ${c.id_consulta || 0})">→</button></td>
-                </tr>`;
-            } else {
-              tbodyDash.innerHTML += `
-                <tr>
-                  <td class="td-name">${c.paciente_nome}</td>
-                  <td class="td-mono">${c.hora}</td>
-                  <td><span class="badge badge-blue">${c.status}</span></td>
-                </tr>`;
-            }
-          });
-        } else {
-          const colspan = tbodyDash.closest('table')?.querySelectorAll('thead th').length || 3;
-          tbodyDash.innerHTML = '<tr><td colspan="' + colspan + '" style="text-align:center;color:#999;">Nenhuma consulta agendada para hoje</td></tr>';
-        }
+    const d = json.dados;
+    setMetricValue('consultas_hoje', d.consultas_hoje ?? 0);
+    setMetricValue('pacientes_ativos', d.pacientes_ativos ?? 0);
+    setMetricValue('exames_pendentes', d.exames_pendentes ?? 0);
+    setMetricValue('novos_pacientes', d.novos_pacientes ?? 0);
+
+    const agendaData = document.getElementById('dash-agenda-data');
+    if (agendaData && d.data_hoje) {
+      agendaData.textContent = 'Hoje, ' + d.data_hoje;
+    }
+
+    const receitaMes = d.receita_mes ?? 0;
+    const receitaPaga = d.receita_paga ?? 0;
+    const meta = 25000;
+    const pct = Math.min(100, Math.round((receitaMes / meta) * 100));
+    const setTxt = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    setTxt('dash-receita-mes', fmtMoedaDash(receitaMes));
+    setTxt('dash-receita-paga', fmtMoedaDash(receitaPaga));
+    setTxt('dash-receita-pendente', fmtMoedaDash(Math.max(0, receitaMes - receitaPaga)));
+    setTxt('dash-receita-pct', pct + '%');
+    const bar = document.getElementById('dash-receita-bar');
+    if (bar) bar.style.width = pct + '%';
+    const mesAtual = new Date().toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' });
+    setTxt('dash-fat-titulo', 'Faturamento — ' + mesAtual);
+
+    const tbodyDash = document.querySelector('#tabela-dash-consultas tbody')
+      || document.getElementById('agenda-hoje-tbody');
+    const podePront = typeof podeAcessarProntuario === 'function' && podeAcessarProntuario();
+    if (tbodyDash) {
+      if (d.ultimas_consultas && d.ultimas_consultas.length > 0) {
+        tbodyDash.innerHTML = '';
+        d.ultimas_consultas.forEach(c => {
+          const cols = tbodyDash.closest('table')?.querySelectorAll('thead th').length || 3;
+          const btnPront = podePront
+            ? `<button class="btn btn-ghost btn-sm btn-prontuario" onclick="abrirProntuario(${c.id_paciente || 0}, ${c.id_consulta || 0})">→</button>`
+            : '';
+          if (cols >= 5) {
+            const idCons = c.id_consulta || 0;
+            tbodyDash.innerHTML += `
+              <tr class="agenda-row-click" style="cursor:pointer" onclick="verAgendamento(${idCons})" title="Clique para ver o agendamento">
+                <td class="td-mono">${c.hora || '—'}</td>
+                <td class="td-name">${c.paciente_nome}</td>
+                <td><span class="badge badge-blue">${c.tipo || 'Consulta'}</span></td>
+                <td><span class="badge badge-amber">${c.status}</span></td>
+                <td onclick="event.stopPropagation()">${btnPront}</td>
+              </tr>`;
+          } else {
+            tbodyDash.innerHTML += `
+              <tr>
+                <td class="td-name">${c.paciente_nome}</td>
+                <td class="td-mono">${c.hora}</td>
+                <td><span class="badge badge-blue">${c.status}</span></td>
+              </tr>`;
+          }
+        });
+      } else {
+        const colspan = tbodyDash.closest('table')?.querySelectorAll('thead th').length || 3;
+        tbodyDash.innerHTML = '<tr><td colspan="' + colspan + '" style="text-align:center;color:#999;">Nenhuma consulta agendada para hoje</td></tr>';
+      }
+    }
+
+    const retornosEl = document.getElementById('proximos-retornos-timeline');
+    if (retornosEl) {
+      const retornos = d.proximos_retornos || [];
+      if (retornos.length) {
+        retornosEl.innerHTML = retornos.map((r, i) => `
+          <li class="tl-item">
+            <div class="tl-dot ${i % 2 ? 'green' : 'blue'}"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>
+            <div class="tl-content">
+              <div class="tl-title">${r.paciente}</div>
+              <div class="tl-body">${r.motivo} · ${r.medico}</div>
+              <div class="tl-date">${r.data}${r.hora ? ' · ' + r.hora : ''}</div>
+            </div>
+          </li>`).join('');
+      } else {
+        retornosEl.innerHTML = '<li class="tl-item"><div class="tl-content"><div class="tl-body" style="color:#999">Nenhum retorno agendado.</div></div></li>';
       }
     }
 
@@ -246,6 +297,7 @@ async function carregarDashboard() {
     await carregarAlertasDashboard();
   } catch (erro) {
     console.error('Erro no dashboard:', erro);
+    showToast('Erro de conexão ao carregar dashboard', 'error');
   }
 }
 
@@ -307,6 +359,8 @@ async function carregarAlertasDashboard() {
     if (!container) return;
 
     if (json.sucesso && Array.isArray(json.dados) && json.dados.length > 0) {
+      const badge = document.getElementById('dash-alertas-badge');
+      if (badge) badge.textContent = json.dados.length + ' ativo' + (json.dados.length > 1 ? 's' : '');
       container.innerHTML = '';
       json.dados.slice(0, 6).forEach(alerta => {
         const dataTexto = alerta.data ? new Date(alerta.data).toLocaleDateString('pt-BR') : 'Data não disponível';
@@ -339,6 +393,8 @@ async function carregarAlertasDashboard() {
         }
       });
     } else {
+      const badge = document.getElementById('dash-alertas-badge');
+      if (badge) badge.textContent = '0 ativos';
       if (container.classList.contains('timeline')) {
         container.innerHTML = '<li class="tl-item"><div class="tl-content"><div class="tl-body" style="color:#999">Nenhum alerta clínico no momento.</div></div></li>';
       } else {

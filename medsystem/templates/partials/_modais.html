@@ -51,6 +51,43 @@
   </div>
 </div>
 
+<!-- ═══════════════ MODAL: Detalhe do Agendamento ═══════════════ -->
+<div class="modal-overlay" id="modal-agendamento" onclick="if(event.target===this)closeModal('modal-agendamento')">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header">
+      <span class="modal-title">Detalhes do Agendamento</span>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-agendamento')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="agend-detalhe-loading" class="text-sm text-3" style="text-align:center;padding:24px">Carregando...</div>
+      <div id="agend-detalhe-conteudo" style="display:none">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+          <div class="patient-avatar-lg" id="agend-avatar">--</div>
+          <div>
+            <div style="font-weight:700;font-size:17px" id="agend-paciente">—</div>
+            <div class="text-sm text-3">Consulta <span class="td-mono" id="agend-numero">#0000</span></div>
+          </div>
+          <span class="badge badge-amber" id="agend-status" style="margin-left:auto">AGENDADA</span>
+        </div>
+        <div class="form-grid" style="gap:12px">
+          <div class="form-group"><label class="text-xs text-3">Data</label><div id="agend-data" style="font-weight:600">—</div></div>
+          <div class="form-group"><label class="text-xs text-3">Horário</label><div id="agend-hora" class="td-mono" style="font-weight:600">—</div></div>
+          <div class="form-group"><label class="text-xs text-3">Médico</label><div id="agend-medico" style="font-weight:600">—</div></div>
+          <div class="form-group"><label class="text-xs text-3">Tipo</label><div id="agend-tipo">—</div></div>
+          <div class="form-group"><label class="text-xs text-3">Convênio</label><div id="agend-convenio">—</div></div>
+          <div class="form-group"><label class="text-xs text-3">Telefone</label><div id="agend-telefone">—</div></div>
+          <div class="form-group full"><label class="text-xs text-3">Motivo / Queixa</label><div id="agend-motivo" style="padding:10px;background:var(--surface2);border-radius:8px;font-size:13px">—</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-agendamento')">Fechar</button>
+      <button class="btn btn-outline btn-prontuario" id="agend-btn-prontuario" style="display:none" onclick="fecharAgendamentoAbrirProntuario()">Prontuário</button>
+      <button class="btn btn-primary" id="agend-btn-consultas" onclick="fecharAgendamentoVerConsultas()">Ver em Consultas</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══════════════ MODAL: Nova Prescrição ═══════════════ -->
 <div class="modal-overlay" id="modal-prescricao" onclick="if(event.target===this)closeModal('modal-prescricao')">
   <div class="modal">

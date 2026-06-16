@@ -26,7 +26,7 @@ function carregarModuloPro(pageId) {
     relatorios: carregarRelatorios,
     equipe: carregarEquipe,
     mensagens: carregarMensagens,
-    prontuario: () => typeof abrirProntuarioInicio === 'function' && abrirProntuarioInicio(),
+    // prontuário: aberto via abrirProntuario() / abrirProntuarioInicio() — não resetar aqui
     novo_paciente: () => typeof carregarPacientes === 'function' && carregarPacientes()
   };
   if (loaders[pageId]) loaders[pageId]();
@@ -53,6 +53,8 @@ async function carregarAgendaSemanal() {
       return 'green';
     };
 
+    const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+
     let html = '<div class="agenda-cell agenda-head"></div>';
     dias.forEach(d => {
       html += `<div class="agenda-cell agenda-head${d.hoje ? ' today' : ''}">${d.label || d.dia}${d.hoje ? ' ●' : ''}<br><small>${d.dia || ''}</small></div>`;
@@ -62,12 +64,120 @@ async function carregarAgendaSemanal() {
       dias.forEach(d => {
         const appt = (d.consultas || []).find(c => c.hora === hora);
         html += appt
-          ? `<div class="agenda-cell"><div class="appt ${corAppt(appt.status)}"><div class="appt-name">${appt.paciente}</div><div class="appt-info">${appt.motivo || 'Consulta'}</div><div class="appt-reservado">Reservado</div></div></div>`
+          ? `<div class="agenda-cell agenda-cell-appt"><div class="appt ${corAppt(appt.status)}" role="button" tabindex="0" title="Ver agendamento — ${esc(appt.paciente)}" onclick="verAgendamento(${appt.id_consulta})" onkeydown="if(event.key==='Enter')verAgendamento(${appt.id_consulta})"><div class="appt-name">${esc(appt.paciente)}</div><div class="appt-info">${esc(appt.motivo || 'Consulta')}</div><div class="appt-reservado">Clique para ver</div></div></div>`
           : '<div class="agenda-cell"></div>';
       });
     });
     grid.innerHTML = html;
   } catch (e) { console.error('Erro agenda:', e); }
+}
+
+let _agendDetalhe = { id_consulta: null, id_paciente: null };
+
+function _badgeStatusAgenda(status) {
+  const s = (status || 'AGENDADA').toUpperCase();
+  if (s === 'CONCLUIDA') return 'badge-green';
+  if (s === 'EM_ATENDIMENTO' || s === 'EM_ANDAMENTO') return 'badge-amber';
+  if (s === 'CANCELADA') return 'badge-red';
+  return 'badge-blue';
+}
+
+function _rotuloStatusAgenda(status) {
+  const map = {
+    AGENDADA: 'Agendada',
+    EM_ATENDIMENTO: 'Em atendimento',
+    EM_ANDAMENTO: 'Em andamento',
+    CONCLUIDA: 'Concluída',
+    CANCELADA: 'Cancelada'
+  };
+  return map[(status || '').toUpperCase()] || status || 'Agendada';
+}
+
+async function verAgendamento(idConsulta) {
+  if (!idConsulta) return;
+
+  _agendDetalhe = { id_consulta: idConsulta, id_paciente: null };
+  const loading = document.getElementById('agend-detalhe-loading');
+  const conteudo = document.getElementById('agend-detalhe-conteudo');
+  if (loading) { loading.style.display = ''; loading.textContent = 'Carregando...'; }
+  if (conteudo) conteudo.style.display = 'none';
+
+  openModal('modal-agendamento');
+
+  try {
+    const json = await apiGet('/api/consultas/' + idConsulta);
+    if (!json.sucesso || !json.dados) {
+      if (loading) loading.textContent = json.mensagem || 'Agendamento não encontrado';
+      showToast(json.mensagem || 'Erro ao carregar agendamento', 'error');
+      return;
+    }
+
+    const c = json.dados;
+    const idPac = c.id_paciente || (c.paciente && (c.paciente.id || c.paciente.id_paciente));
+    _agendDetalhe.id_paciente = idPac;
+
+    let telefone = '—';
+    if (idPac) {
+      try {
+        const jp = await apiGet('/api/pacientes/' + idPac);
+        if (jp.sucesso && jp.dados) telefone = jp.dados.telefone || '—';
+      } catch (_) { /* opcional */ }
+    }
+
+    const nome = (c.paciente && c.paciente.nome) || 'Paciente';
+    const idCons = c.id || c.id_consulta;
+    const dataFmt = c.data_consulta
+      ? new Date(c.data_consulta).toLocaleDateString('pt-BR', { timeZone: 'UTC' })
+      : '—';
+    const horaFmt = c.hora_consulta || (c.data_consulta ? new Date(c.data_consulta).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '—');
+    const medico = (c.medico && c.medico.nome) || '—';
+
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    set('agend-paciente', nome);
+    set('agend-numero', '#' + String(idCons).padStart(4, '0'));
+    set('agend-data', dataFmt);
+    set('agend-hora', horaFmt);
+    set('agend-medico', medico);
+    set('agend-tipo', c.tipo_consulta || 'Consulta');
+    set('agend-convenio', c.convenio || 'Particular');
+    set('agend-telefone', telefone);
+    set('agend-motivo', c.motivo || 'Não informado');
+
+    const avatar = document.getElementById('agend-avatar');
+    if (avatar) avatar.textContent = nome.substring(0, 2).toUpperCase();
+
+    const st = document.getElementById('agend-status');
+    if (st) {
+      st.textContent = _rotuloStatusAgenda(c.status);
+      st.className = 'badge ' + _badgeStatusAgenda(c.status);
+    }
+
+    const btnPront = document.getElementById('agend-btn-prontuario');
+    if (btnPront) {
+      btnPront.style.display = (typeof podeAcessarProntuario === 'function' && podeAcessarProntuario()) ? '' : 'none';
+    }
+
+    if (loading) loading.style.display = 'none';
+    if (conteudo) conteudo.style.display = '';
+  } catch (e) {
+    console.error('Erro verAgendamento:', e);
+    if (loading) loading.textContent = 'Erro ao carregar agendamento';
+    showToast('Erro ao carregar agendamento', 'error');
+  }
+}
+
+function fecharAgendamentoAbrirProntuario() {
+  const { id_paciente, id_consulta } = _agendDetalhe;
+  closeModal('modal-agendamento');
+  if (id_paciente && typeof abrirProntuario === 'function') {
+    abrirProntuario(id_paciente, id_consulta);
+  }
+}
+
+function fecharAgendamentoVerConsultas() {
+  closeModal('modal-agendamento');
+  showPage('consultas');
+  if (typeof carregarConsultas === 'function') carregarConsultas();
 }
 
 async function carregarHorariosDisponiveis() {
@@ -654,6 +764,9 @@ window.atualizarPreviewPrecoAgendamento = atualizarPreviewPrecoAgendamento;
 window.agendarConsultaModal = agendarConsultaModal;
 window.carregarHorariosDisponiveis = carregarHorariosDisponiveis;
 window.selecionarHoraAgendamento = selecionarHoraAgendamento;
+window.verAgendamento = verAgendamento;
+window.fecharAgendamentoAbrirProntuario = fecharAgendamentoAbrirProntuario;
+window.fecharAgendamentoVerConsultas = fecharAgendamentoVerConsultas;
 
 // ══════════════════════════════════════
 // PRONTUÁRIO ELETRÔNICO (médico/admin)
@@ -748,7 +861,11 @@ async function abrirProntuario(idPaciente, idConsulta) {
     showToast('Prontuário disponível apenas para médicos', 'error');
     return;
   }
-  if (!idPaciente) {
+
+  idPaciente = parseInt(idPaciente, 10);
+  idConsulta = idConsulta ? parseInt(idConsulta, 10) : null;
+
+  if (!idPaciente || Number.isNaN(idPaciente)) {
     showToast('Paciente inválido', 'error');
     return;
   }
@@ -757,11 +874,16 @@ async function abrirProntuario(idPaciente, idConsulta) {
   showPage('prontuario');
   _prontPacienteId = idPaciente;
   document.getElementById('pront-bar-selecao').style.display = 'none';
+  document.getElementById('pront-area-clinica').style.display = 'none';
+  document.getElementById('pront-consulta-wrap').style.display = 'none';
+  document.getElementById('pront-subtitulo').textContent = 'Carregando prontuário...';
 
   try {
     const json = await apiGet('/api/prontuarios/paciente/' + idPaciente);
     if (!json.sucesso) {
       showToast(json.mensagem || 'Erro ao carregar consultas', 'error');
+      document.getElementById('pront-bar-selecao').style.display = '';
+      document.getElementById('pront-subtitulo').textContent = 'Selecione um paciente e uma consulta';
       return;
     }
 
@@ -788,6 +910,8 @@ async function abrirProntuario(idPaciente, idConsulta) {
   } catch (e) {
     console.error('Erro abrir prontuário:', e);
     showToast('Erro ao abrir prontuário', 'error');
+    document.getElementById('pront-bar-selecao').style.display = '';
+    document.getElementById('pront-subtitulo').textContent = 'Selecione um paciente e uma consulta';
   }
 }
 

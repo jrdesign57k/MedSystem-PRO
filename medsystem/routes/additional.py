@@ -4,9 +4,11 @@ MedSystem Additional Routes - Exames e Dashboard
 
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from app import db
-from models import Exame, TipoExame, Consulta, Paciente, LogAuditoria, Diagnostico, Medico
+from extensions import db
+from models import Exame, TipoExame, Consulta, Paciente, LogAuditoria, Diagnostico, Medico, Receita
 from datetime import datetime, timedelta
+from sqlalchemy import func
+from medsystem.routes.consultas import _normalizar_hora, HORARIOS_AGENDA
 
 exames_bp = Blueprint('exames', __name__)
 dashboard_bp = Blueprint('dashboard', __name__)
@@ -47,7 +49,7 @@ def listar_exames_pendentes():
     """Lista exames pendentes (CURSOR - simulado com query)"""
     try:
         exames = Exame.query.filter(
-            Exame.status.in_(['SOLICITADO', 'EM_ANALISE'])
+            Exame.status.in_(['SOLICITADO', 'EM_ANALISE', 'AGUARDANDO'])
         ).order_by(Exame.id).all()
         
         # Agrupar por paciente
@@ -176,8 +178,26 @@ def obter_estatisticas():
         
         # Exames pendentes
         exames_pendentes = Exame.query.filter(
-            Exame.status.in_(['SOLICITADO', 'EM_ANALISE'])
+            Exame.status.in_(['SOLICITADO', 'EM_ANALISE', 'AGUARDANDO'])
         ).count()
+
+        # Novos pacientes (30 dias)
+        inicio_mes = datetime(hoje.year, hoje.month, 1)
+        trinta_dias = datetime.combine(hoje - timedelta(days=30), datetime.min.time())
+        novos_pacientes = Paciente.query.filter(
+            Paciente.data_cadastro >= trinta_dias,
+            Paciente.ativo.is_(True)
+        ).count()
+
+        # Faturamento do mês
+        receita_mes = db.session.query(func.coalesce(func.sum(Receita.valor), 0)).filter(
+            Receita.data_receita >= inicio_mes,
+            Receita.status.in_(['PAGO', 'PENDENTE'])
+        ).scalar()
+        receita_paga = db.session.query(func.coalesce(func.sum(Receita.valor), 0)).filter(
+            Receita.data_receita >= inicio_mes,
+            Receita.status == 'PAGO'
+        ).scalar()
         
         # Consultas próximas (próximos 7 dias)
         data_futura = hoje + timedelta(days=7)
@@ -199,10 +219,27 @@ def obter_estatisticas():
                 'id_paciente': c.id_paciente,
                 'paciente_nome': c.paciente.nome if c.paciente else 'N/A',
                 'data': c.data_consulta.isoformat() if c.data_consulta else None,
-                'hora': c.hora_consulta or '—',
+                'hora': c.hora_consulta or (c.data_consulta.strftime('%H:%M') if c.data_consulta else '—'),
+                'tipo': c.tipo_consulta or 'Consulta',
                 'status': c.status or 'AGENDADA'
             })
-        
+
+        proximos = Consulta.query.filter(
+            Consulta.data_consulta >= datetime(hoje.year, hoje.month, hoje.day) + timedelta(days=1),
+            Consulta.data_consulta <= datetime(hoje.year, hoje.month, hoje.day) + timedelta(days=30),
+            Consulta.status.in_(['AGENDADA', 'EM_ATENDIMENTO'])
+        ).order_by(Consulta.data_consulta).limit(5).all()
+
+        retornos_list = []
+        for c in proximos:
+            retornos_list.append({
+                'paciente': c.paciente.nome if c.paciente else 'N/A',
+                'medico': c.medico.usuario.nome if (c.medico and c.medico.usuario) else 'N/A',
+                'motivo': c.motivo or c.tipo_consulta or 'Consulta',
+                'data': c.data_consulta.strftime('%d/%m/%Y') if c.data_consulta else '',
+                'hora': c.hora_consulta or '',
+            })
+
         return jsonify({
             'sucesso': True,
             'dados': {
@@ -210,7 +247,12 @@ def obter_estatisticas():
                 'pacientes_ativos': pacientes_ativos,
                 'exames_pendentes': exames_pendentes,
                 'consultas_proximas': consultas_proximas,
-                'ultimas_consultas': ultimas_list
+                'novos_pacientes': novos_pacientes,
+                'receita_mes': float(receita_mes or 0),
+                'receita_paga': float(receita_paga or 0),
+                'ultimas_consultas': ultimas_list,
+                'proximos_retornos': retornos_list,
+                'data_hoje': hoje.strftime('%d/%m/%Y'),
             }
         }), 200
         
@@ -283,7 +325,8 @@ def agenda_semanal():
     try:
         hoje = datetime.now().date()
         dias_pt = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
-        horarios = ['08:00', '09:30', '11:00', '14:00', '15:30', '17:00']
+        horarios_extra = set()
+
         dias = []
 
         for i in range(7):
@@ -299,21 +342,38 @@ def agenda_semanal():
 
             consultas_list = []
             for c in consultas:
-                hora = (c.hora_consulta or
-                        (c.data_consulta.strftime('%H:%M') if c.data_consulta else '08:00'))[:5]
+                hora = _normalizar_hora(c.hora_consulta) or _normalizar_hora(
+                    c.data_consulta.strftime('%H:%M') if c.data_consulta else None
+                ) or '08:00'
+                if hora not in HORARIOS_AGENDA:
+                    horarios_extra.add(hora)
+
                 consultas_list.append({
+                    'id_consulta': c.id_consulta,
+                    'id_paciente': c.id_paciente,
+                    'id_medico': c.id_medico,
                     'hora': hora,
                     'paciente': c.paciente.nome if c.paciente else 'Paciente',
+                    'medico': c.medico.usuario.nome if (c.medico and c.medico.usuario) else '—',
                     'motivo': c.motivo or c.tipo_consulta or 'Consulta',
-                    'status': c.status or 'AGENDADA'
+                    'tipo': c.tipo_consulta or 'Consulta',
+                    'convenio': c.convenio or 'Particular',
+                    'status': c.status or 'AGENDADA',
+                    'data': c.data_consulta.strftime('%d/%m/%Y') if c.data_consulta else '',
                 })
 
             dias.append({
                 'label': dias_pt[dia.weekday()],
                 'dia': dia.strftime('%d/%m'),
+                'data_iso': dia.isoformat(),
                 'hoje': i == 0,
                 'consultas': consultas_list
             })
+
+        horarios = list(HORARIOS_AGENDA)
+        for h in sorted(horarios_extra, key=lambda x: (int(x[:2]), int(x[3:]))):
+            if h not in horarios:
+                horarios.append(h)
 
         return jsonify({
             'sucesso': True,
@@ -344,7 +404,7 @@ def proximas_consultas():
         consultas_list = []
         for c in proximas:
             consultas_list.append({
-                'id': c.id,
+                'id': c.id_consulta,
                 'paciente': c.paciente.nome if c.paciente else 'N/A',
                 'medico': c.medico.usuario.nome if c.medico and c.medico.usuario else 'N/A',
                 'data': c.data_consulta.isoformat() if c.data_consulta else None,
@@ -410,7 +470,7 @@ def grafico_atendimentos():
         medicos_count = {}
         medicos = db.session.query(
             Medico.id,
-            db.func.count(Consulta.id).label('total')
+            func.count(Consulta.id_consulta).label('total')
         ).join(Consulta, Medico.id == Consulta.id_medico).filter(
             Consulta.data_consulta >= (datetime.now() - timedelta(days=30))
         ).group_by(Medico.id).all()
@@ -424,7 +484,7 @@ def grafico_atendimentos():
         status_count = {}
         estatuses = db.session.query(
             Consulta.status,
-            db.func.count(Consulta.id).label('total')
+            func.count(Consulta.id_consulta).label('total')
         ).filter(
             Consulta.data_consulta >= (datetime.now() - timedelta(days=30))
         ).group_by(Consulta.status).all()
@@ -481,7 +541,7 @@ def grafico_classificacao_risco():
         consultas_criticas = db.session.query(
             Paciente.id_paciente,
             Paciente.nome,
-            db.func.count(Diagnostico.id).label('total_diagnosticos_criticos')
+            func.count(Diagnostico.id).label('total_diagnosticos_criticos')
         ).join(
             Consulta, Paciente.id_paciente == Consulta.id_paciente
         ).join(

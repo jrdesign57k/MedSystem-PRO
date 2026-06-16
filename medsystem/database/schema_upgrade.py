@@ -20,6 +20,25 @@ MIGRACOES = {
     'receitas': [
         ('convenio', 'VARCHAR(100) NULL'),
     ],
+    'diagnosticos': [
+        ('id_paciente', 'INT NULL'),
+        ('id_medico', 'INT NULL'),
+        ('status', "VARCHAR(20) NULL DEFAULT 'ATIVO'"),
+        ('data_diagnostico', 'DATETIME NULL DEFAULT CURRENT_TIMESTAMP'),
+    ],
+    'paciente': [
+        ('data_cadastro', 'DATETIME NULL DEFAULT CURRENT_TIMESTAMP'),
+        ('ativo', 'TINYINT(1) NOT NULL DEFAULT 1'),
+    ],
+    'exames': [
+        ('id_paciente', 'INT NULL'),
+        ('id_medico', 'INT NULL'),
+        ('nome_exame', 'VARCHAR(200) NULL'),
+        ('laudo', 'TEXT NULL'),
+        ('prioridade', "VARCHAR(20) NULL DEFAULT 'NORMAL'"),
+        ('data_solicitacao', 'DATETIME NULL DEFAULT CURRENT_TIMESTAMP'),
+        ('data_resultado', 'DATETIME NULL'),
+    ],
 }
 
 
@@ -33,10 +52,33 @@ def _adicionar_colunas(tabela, colunas, insp):
     for coluna, definicao in colunas:
         if coluna not in existentes:
             db.session.execute(text(f'ALTER TABLE {tabela} ADD COLUMN {coluna} {definicao}'))
-            print(f'✓ Migração: coluna {tabela}.{coluna} adicionada')
+            print(f'[OK] Migracao: coluna {tabela}.{coluna} adicionada')
             alterou = True
 
     return alterou
+
+
+def _backfill_referencias():
+    """Preenche FKs a partir de consulta quando colunas foram adicionadas depois."""
+    backfills = [
+        """
+        UPDATE diagnosticos d
+        INNER JOIN consulta c ON d.id_consulta = c.id_consulta
+        SET d.id_paciente = c.id_paciente, d.id_medico = c.id_medico
+        WHERE d.id_paciente IS NULL OR d.id_medico IS NULL
+        """,
+        """
+        UPDATE exames e
+        INNER JOIN consulta c ON e.id_consulta = c.id_consulta
+        SET e.id_paciente = c.id_paciente, e.id_medico = c.id_medico
+        WHERE e.id_paciente IS NULL OR e.id_medico IS NULL
+        """,
+    ]
+    for sql in backfills:
+        try:
+            db.session.execute(text(sql))
+        except Exception:
+            pass
 
 
 def upgrade_schema():
@@ -47,6 +89,8 @@ def upgrade_schema():
     for tabela, colunas in MIGRACOES.items():
         if _adicionar_colunas(tabela, colunas, insp):
             alterou = True
+
+    _backfill_referencias()
 
     if alterou:
         db.session.commit()

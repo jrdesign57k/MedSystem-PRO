@@ -153,7 +153,7 @@ def create_app():
             executar_seeds()
 
         except Exception as e:
-            print(f"⚠️ Erro silencioso no banco (tabelas já existem ou ajuste pendente): {e}")
+            print(f'[AVISO] Erro no banco (tabelas ja existem ou ajuste pendente): {e}')
 
 
     # ──── ROTA DO FRONTEND (Versão única PRO) ────
@@ -189,4 +189,5 @@ def create_app():
 
 if __name__ == '__main__':
     app = create_app()
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    debug = os.getenv('FLASK_DEBUG', '0').lower() in ('1', 'true', 'yes')
+    app.run(debug=debug, host='0.0.0.0', port=5000, use_reloader=False)

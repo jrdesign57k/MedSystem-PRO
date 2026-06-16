@@ -429,7 +429,9 @@ textarea { resize:vertical; min-height:72px; }
   border-radius:0 5px 5px 0; padding:5px 8px; margin-bottom:2px;
   font-size:11px; cursor:pointer; transition:.1s; overflow:hidden;
 }
-.appt:hover { filter:brightness(.96); }
+.appt:hover { filter:brightness(.96); transform:translateY(-1px); box-shadow:0 2px 8px rgba(0,0,0,.08); }
+.agenda-cell-appt { padding:4px; }
+.agenda-row-click:hover { background:var(--surface2); }
 .appt.green { background:var(--green-pale); border-color:var(--green-light); }
 .appt.amber { background:var(--amber-pale); border-color:var(--amber-light); }
 .appt.red   { background:var(--red-pale);   border-color:var(--red-light); }
