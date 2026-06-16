@@ -76,6 +76,17 @@ function doLogin() {
 
 window.doLogin = doLogin;
 
+function toggleSenha(btn) {
+  const input = document.getElementById('login-senha');
+  if (!input) return;
+  const mostrar = input.type === 'password';
+  input.type = mostrar ? 'text' : 'password';
+  const olhoAberto = '<path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/>';
+  const olhoFechado = '<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-7-11-7a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 7 11 7a18.5 18.5 0 01-2.16 3.19M1 1l22 22"/>';
+  btn.innerHTML = '<svg viewBox="0 0 24 24">' + (mostrar ? olhoFechado : olhoAberto) + '</svg>';
+}
+window.toggleSenha = toggleSenha;
+
 function setMetricValue(metric, value) {
   const idMap = {
     consultas_hoje: 'dash-consultas',
@@ -844,7 +855,9 @@ async function carregarConsultas() {
         const horaFmt = c.hora_consulta || '—';
         const idPac = c.id_paciente || (c.paciente && (c.paciente.id || c.paciente.id_paciente));
         const nomePac = (c.paciente && c.paciente.nome) || 'Paciente';
-        const nomeMed = (c.medico && c.medico.nome) || '—';
+        const nomeMed = c.medico_nome
+          || (c.medico && (c.medico.nome || (c.medico.usuario && c.medico.usuario.nome)))
+          || '—';
         const idCons = c.id || c.id_consulta || '';
 
         const podePront = typeof podeAcessarProntuario === 'function' && podeAcessarProntuario();

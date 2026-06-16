@@ -41,6 +41,14 @@ MIGRACOES = {
     ],
 }
 
+# Colunas cujo TIPO precisa ser ajustado quando o banco foi criado com ENUMs
+# restritivos (ex.: gravidade sem 'CRITICA'). (coluna, tipo_desejado)
+MODIFICACOES = {
+    'diagnosticos': [
+        ('gravidade', 'VARCHAR(20) NULL'),
+    ],
+}
+
 
 def _adicionar_colunas(tabela, colunas, insp):
     if tabela not in insp.get_table_names():
@@ -53,6 +61,34 @@ def _adicionar_colunas(tabela, colunas, insp):
         if coluna not in existentes:
             db.session.execute(text(f'ALTER TABLE {tabela} ADD COLUMN {coluna} {definicao}'))
             print(f'[OK] Migracao: coluna {tabela}.{coluna} adicionada')
+            alterou = True
+
+    return alterou
+
+
+def _ajustar_tipos(tabela, colunas, insp):
+    """Converte ENUMs antigos para o tipo desejado (idempotente)."""
+    if tabela not in insp.get_table_names():
+        return False
+
+    alterou = False
+    for coluna, tipo_desejado in colunas:
+        try:
+            atual = db.session.execute(text(
+                "SELECT COLUMN_TYPE FROM information_schema.COLUMNS "
+                "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :t AND COLUMN_NAME = :c"
+            ), {'t': tabela, 'c': coluna}).scalar()
+        except Exception:
+            atual = None
+
+        if not atual:
+            continue
+
+        atual_norm = atual.lower().replace(' ', '')
+        # Só altera se o tipo atual difere do desejado (ex.: ainda é enum)
+        if atual_norm != tipo_desejado.split()[0].lower():
+            db.session.execute(text(f'ALTER TABLE {tabela} MODIFY {coluna} {tipo_desejado}'))
+            print(f'[OK] Migracao: coluna {tabela}.{coluna} convertida de {atual} para {tipo_desejado}')
             alterou = True
 
     return alterou
@@ -88,6 +124,10 @@ def upgrade_schema():
 
     for tabela, colunas in MIGRACOES.items():
         if _adicionar_colunas(tabela, colunas, insp):
+            alterou = True
+
+    for tabela, colunas in MODIFICACOES.items():
+        if _ajustar_tipos(tabela, colunas, insp):
             alterou = True
 
     _backfill_referencias()

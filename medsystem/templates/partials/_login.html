@@ -1,4 +1,10 @@
 <div id="login-screen">
+  <div class="login-orbs" aria-hidden="true">
+    <span class="login-orb orb-1"></span>
+    <span class="login-orb orb-2"></span>
+    <span class="login-orb orb-3"></span>
+  </div>
+
   <div class="login-left">
     <div class="login-brand">
       <div class="login-brand-icon">
@@ -9,26 +15,72 @@
         <div class="login-brand-sub">Sistema Médico Profissional</div>
       </div>
     </div>
+
     <div class="login-headline">Gestão clínica<br/><span>completa e</span><br/>eficiente.</div>
     <div class="login-desc">Pacientes, consultas, exames, prontuários, financeiro e equipe — tudo em um só lugar.</div>
+
+    <div class="login-features">
+      <div class="login-feat">
+        <span class="login-feat-dot">
+          <svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+        </span>
+        Prontuário eletrônico completo
+      </div>
+      <div class="login-feat">
+        <span class="login-feat-dot">
+          <svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+        </span>
+        Agenda e gestão de consultas
+      </div>
+      <div class="login-feat">
+        <span class="login-feat-dot">
+          <svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+        </span>
+        Classificação de risco inteligente
+      </div>
+      <div class="login-feat">
+        <span class="login-feat-dot">
+          <svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+        </span>
+        Relatórios e exportação em PDF
+      </div>
+    </div>
   </div>
+
   <div class="login-right">
     <div class="login-card">
-      <div class="login-card-title">Bem-vindo 👋</div>
+      <div class="login-card-logo">
+        <img src="/static/v10/MedSystem.png" alt="MedSystem"/>
+      </div>
+      <div class="login-card-title">Bem-vindo de volta</div>
       <div class="login-card-sub">Acesse sua conta MedSystem PRO</div>
+
       <div id="login-error" class="login-error" style="display:none;"></div>
+
       <div class="login-field">
-        <label>E-mail</label>
-        <input type="email" id="login-email" value="medico@medsystem.com" onkeydown="if(event.key==='Enter')doLogin()"/>
+        <label for="login-email">E-mail</label>
+        <div class="login-input-wrap">
+          <svg class="login-input-icon" viewBox="0 0 24 24"><path d="M4 4h16a2 2 0 012 2v12a2 2 0 01-2 2H4a2 2 0 01-2-2V6a2 2 0 012-2z"/><path d="M22 6l-10 7L2 6"/></svg>
+          <input type="email" id="login-email" placeholder="seu@email.com" value="medico@medsystem.com" onkeydown="if(event.key==='Enter')doLogin()"/>
+        </div>
       </div>
+
       <div class="login-field">
-        <label>Senha</label>
-        <input type="password" id="login-senha" value="MedSystem12#" onkeydown="if(event.key==='Enter')doLogin()"/>
+        <label for="login-senha">Senha</label>
+        <div class="login-input-wrap">
+          <svg class="login-input-icon" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          <input type="password" id="login-senha" placeholder="••••••••" value="MedSystem12#" onkeydown="if(event.key==='Enter')doLogin()"/>
+          <button type="button" class="login-eye" onclick="toggleSenha(this)" aria-label="Mostrar/ocultar senha" tabindex="-1">
+            <svg viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
       </div>
+
       <button class="login-btn" type="button" onclick="doLogin()" id="login-btn">
         <svg viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
         Entrar no sistema
       </button>
+
       <div class="login-footer">MedSystem PRO v2 · © 2026</div>
     </div>
   </div>

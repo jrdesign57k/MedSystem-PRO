@@ -456,10 +456,153 @@ window.salvarPrecoConsulta = salvarPrecoConsulta;
 window.editarPrecoConsulta = editarPrecoConsulta;
 window.excluirPrecoConsulta = excluirPrecoConsulta;
 
-async function carregarRelatorios() {
+let _relatorioData = null;
+
+async function carregarRelatorios(comAviso) {
+  const escR = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+  const setTxt = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
   try {
-    await apiGet('/api/relatorios');
-  } catch (e) { console.error('Erro relatórios:', e); }
+    const json = await apiGet('/api/relatorios');
+    if (!json || !json.sucesso) {
+      const aviso = '<div class="text-3 text-sm" style="text-align:center;padding:12px">Não foi possível carregar os dados</div>';
+      const ed = document.getElementById('rel-diagnosticos'); if (ed) ed.innerHTML = aviso;
+      const em = document.getElementById('rel-medicos'); if (em) em.innerHTML = aviso;
+      if (comAviso) showToast('Não foi possível gerar o relatório', 'error');
+      return;
+    }
+    _relatorioData = json;
+
+    const ind = json.indicadores || {};
+    const periodo = (json.periodo && json.periodo.mes) ? json.periodo.mes : '';
+    setTxt('rel-periodo', periodo ? ('Indicadores de ' + periodo) : 'Indicadores clínicos e operacionais');
+
+    setTxt('rel-consultas', ind.consultas_mes ?? 0);
+    const varc = Number(ind.variacao_consultas || 0);
+    const deltaEl = document.getElementById('rel-consultas-delta');
+    if (deltaEl) {
+      deltaEl.textContent = (varc >= 0 ? '↑ ' : '↓ ') + Math.abs(varc) + '% vs mês ant.';
+      deltaEl.className = 'stat-delta ' + (varc >= 0 ? 'up' : 'down');
+    }
+    setTxt('rel-novos', ind.novos_pacientes ?? 0);
+    setTxt('rel-novos-label', periodo || '—');
+    setTxt('rel-retornos', ind.retornos ?? 0);
+    setTxt('rel-retornos-delta', (ind.taxa_retorno ?? 0) + '% do total');
+    setTxt('rel-exames', ind.exames_solicitados ?? 0);
+    setTxt('rel-exames-label', periodo || '—');
+
+    // Top diagnósticos
+    const cores = ['var(--red-light)', 'var(--blue-light)', 'var(--amber-light)', 'var(--teal-light)', 'var(--purple-light)'];
+    const diag = json.top_diagnosticos || [];
+    const elDiag = document.getElementById('rel-diagnosticos');
+    if (elDiag) {
+      if (!diag.length) {
+        elDiag.innerHTML = '<div class="text-3 text-sm" style="text-align:center;padding:12px">Nenhum diagnóstico no período</div>';
+      } else {
+        const maxD = Math.max(...diag.map(d => d.casos || 0), 1);
+        elDiag.innerHTML = diag.map((d, i) => {
+          const pct = Math.round(((d.casos || 0) / maxD) * 100);
+          return `<div style="margin-bottom:12px">
+            <div class="flex-bet text-sm mb16"><span style="font-weight:600">${escR(d.cid)} · ${escR(d.descricao)}</span><span>${d.casos || 0} casos</span></div>
+            <div class="finance-bar"><div class="finance-fill" style="width:${pct}%;background:${cores[i % cores.length]}"></div></div>
+          </div>`;
+        }).join('');
+      }
+    }
+
+    // Consultas por médico
+    const coresM = ['var(--blue-mid)', 'var(--green-light)', 'var(--purple-light)', 'var(--amber-light)', 'var(--teal-light)'];
+    const avs = ['avatar-blue', 'avatar-green', 'avatar-purple'];
+    const meds = json.consultas_por_medico || [];
+    const elMed = document.getElementById('rel-medicos');
+    if (elMed) {
+      if (!meds.length) {
+        elMed.innerHTML = '<div class="text-3 text-sm" style="text-align:center;padding:12px">Nenhuma consulta no período</div>';
+      } else {
+        const maxM = Math.max(...meds.map(m => m.consultas || 0), 1);
+        elMed.innerHTML = meds.map((m, i) => {
+          const pct = Math.round(((m.consultas || 0) / maxM) * 100);
+          const ini = String(m.nome || '?').split(' ').filter(Boolean).slice(0, 2).map(p => p[0]).join('').toUpperCase();
+          return `<div style="margin-bottom:14px">
+            <div class="flex-bet mb16">
+              <div style="display:flex;align-items:center;gap:8px"><div class="avatar ${avs[i % avs.length]}" style="width:28px;height:28px;font-size:11px">${escR(ini)}</div><span style="font-weight:600">${escR(m.nome)}</span></div>
+              <span style="font-weight:700">${m.consultas || 0}</span>
+            </div>
+            <div class="finance-bar"><div class="finance-fill" style="width:${pct}%;background:${coresM[i % coresM.length]}"></div></div>
+          </div>`;
+        }).join('');
+      }
+    }
+
+    if (comAviso) showToast('Relatório gerado!', 'success');
+  } catch (e) {
+    console.error('Erro relatórios:', e);
+    if (comAviso) showToast('Erro ao gerar relatório', 'error');
+  }
+}
+
+function gerarRelatorioPDF() {
+  if (!window.jspdf || !window.jspdf.jsPDF) {
+    showToast('Biblioteca de PDF não carregada. Verifique a conexão.', 'error');
+    return;
+  }
+  if (!_relatorioData) {
+    showToast('Carregue o relatório antes de exportar', 'warn');
+    return;
+  }
+  const d = _relatorioData;
+  const ind = d.indicadores || {};
+  const periodo = (d.periodo && d.periodo.mes) ? d.periodo.mes : '';
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  doc.setFontSize(18);
+  doc.setTextColor(26, 86, 219);
+  doc.text('MedSystem PRO — Relatório', 14, 20);
+  doc.setFontSize(11);
+  doc.setTextColor(90, 90, 90);
+  doc.text('Período: ' + (periodo || '—'), 14, 28);
+  doc.text('Gerado em: ' + new Date().toLocaleString('pt-BR'), 14, 34);
+
+  doc.autoTable({
+    startY: 42,
+    head: [['Indicador', 'Valor']],
+    body: [
+      ['Consultas no mês', String(ind.consultas_mes ?? 0)],
+      ['Variação vs mês anterior', (ind.variacao_consultas ?? 0) + '%'],
+      ['Novos pacientes', String(ind.novos_pacientes ?? 0)],
+      ['Retornos', String(ind.retornos ?? 0)],
+      ['Taxa de retorno', (ind.taxa_retorno ?? 0) + '%'],
+      ['Exames solicitados', String(ind.exames_solicitados ?? 0)],
+    ],
+    theme: 'striped',
+    headStyles: { fillColor: [37, 99, 235] },
+  });
+
+  const diag = d.top_diagnosticos || [];
+  if (diag.length) {
+    doc.autoTable({
+      startY: doc.lastAutoTable.finalY + 8,
+      head: [['CID', 'Diagnóstico', 'Casos']],
+      body: diag.map(x => [x.cid || '', x.descricao || '', String(x.casos || 0)]),
+      theme: 'striped',
+      headStyles: { fillColor: [37, 99, 235] },
+    });
+  }
+
+  const meds = d.consultas_por_medico || [];
+  if (meds.length) {
+    doc.autoTable({
+      startY: doc.lastAutoTable.finalY + 8,
+      head: [['Médico', 'CRM', 'Consultas']],
+      body: meds.map(x => [x.nome || '', x.crm || '', String(x.consultas || 0)]),
+      theme: 'striped',
+      headStyles: { fillColor: [37, 99, 235] },
+    });
+  }
+
+  const nome = 'relatorio-medsystem-' + (periodo || 'atual').replace(/[^\w]+/g, '-').toLowerCase() + '.pdf';
+  doc.save(nome);
+  showToast('PDF exportado!', 'success');
 }
 
 async function carregarEquipe() {

@@ -108,7 +108,7 @@ def listar_consultas():
             
             # Formato aninhado (caso o JS use consulta.paciente.nome)
             dados['paciente'] = {'nome': nome_paciente}
-            dados['medico'] = {'usuario': {'nome': nome_medico}}
+            dados['medico'] = {'nome': nome_medico, 'usuario': {'nome': nome_medico}}
             
             lista_formatada.append(dados)
         
