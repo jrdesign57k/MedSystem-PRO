@@ -1,23 +1,24 @@
 """
 Usuários de demonstração — um médico por especialidade + 2 recepcionistas.
 Idempotente: cria contas faltantes e corrige vínculo médico ↔ especialidade por nome.
+
+Os nomes das especialidades devem coincidir com app.py (especialidades_padrao).
 """
 from extensions import db
 from models import Usuario, Medico, Especialidade
 
 SENHA_DEMO = 'MedSystem12#'
 
-# (nome da especialidade no banco, e-mail, nome completo, CRM)
+# (nome exato da especialidade no banco, e-mail, nome completo, CRM)
 MEDICOS_POR_ESPECIALIDADE = [
     ('Clínica Geral', 'drcarlos@medsystem.com', 'Dr. Carlos Mendonça', 'SP123456'),
     ('Cardiologia', 'drcardio@medsystem.com', 'Dr. Roberto Cardoso', 'SP111111'),
-    ('Dermatologia', 'drderma@medsystem.com', 'Dra. Juliana Costa', 'SP222221'),
     ('Pediatria', 'drpediatria@medsystem.com', 'Dra. Fernanda Lima', 'SP222222'),
-    ('Ginecologia', 'drgineco@medsystem.com', 'Dra. Patrícia Souza', 'SP333333'),
+    ('Ginecologia e Obstetrícia', 'drgineco@medsystem.com', 'Dra. Patrícia Souza', 'SP333333'),
     ('Ortopedia', 'drortopedia@medsystem.com', 'Dr. Marcos Alves', 'SP444444'),
     ('Neurologia', 'drneuro@medsystem.com', 'Dr. André Vieira', 'SP555555'),
     ('Oftalmologia', 'droftalmo@medsystem.com', 'Dra. Laura Martins', 'SP666666'),
-    ('Psiquiatria', 'drpsiquiatria@medsystem.com', 'Dr. Rafael Mendes', 'SP888888'),
+    ('Cirurgia Geral', 'drcirurgia@medsystem.com', 'Dr. Paulo Ribeiro', 'SP777777'),
 ]
 
 RECEPCAO_DEMO = [
@@ -25,15 +26,15 @@ RECEPCAO_DEMO = [
     {'email': 'recepcao2@medsystem.com', 'nome': 'Bruno Recepção'},
 ]
 
-# Conta criada com mapeamento antigo por ID — reaproveita para Psiquiatria se ainda existir.
-LEGADO_EMAIL_PSQ = 'drcirurgia@medsystem.com'
-
 
 def _especialidade_por_nome(nome):
     esp = Especialidade.query.filter_by(nome=nome).first()
     if esp:
         return esp
-    return Especialidade.query.filter(Especialidade.nome.ilike(nome)).first()
+    esp = Especialidade.query.filter(Especialidade.nome.ilike(nome)).first()
+    if esp:
+        return esp
+    return Especialidade.query.filter(Especialidade.nome.ilike(f'%{nome}%')).first()
 
 
 def _garantir_medico(nome_esp, email, nome, crm):
@@ -58,29 +59,6 @@ def _garantir_medico(nome_esp, email, nome, crm):
     return True
 
 
-def _migrar_legado_psiquiatria():
-    """Move drcirurgia@ (seed antigo) para Psiquiatria ou remove duplicata."""
-    legado = Usuario.query.filter_by(email=LEGADO_EMAIL_PSQ).first()
-    if not legado:
-        return
-
-    psiq = _especialidade_por_nome('Psiquiatria')
-    novo = Usuario.query.filter_by(email='drpsiquiatria@medsystem.com').first()
-    if novo or not psiq:
-        med = Medico.query.filter_by(id_usuario=legado.id).first()
-        if med:
-            db.session.delete(med)
-        db.session.delete(legado)
-        return
-
-    legado.nome = 'Dr. Rafael Mendes'
-    legado.email = 'drpsiquiatria@medsystem.com'
-    med = Medico.query.filter_by(id_usuario=legado.id).first()
-    if med:
-        med.id_especialidade = psiq.id
-        med.crm = 'SP888888'
-
-
 def _criar_recepcao(dados):
     if Usuario.query.filter_by(email=dados['email']).first():
         return False
@@ -103,8 +81,6 @@ def seed_usuarios_demo():
     for nome_esp, email, nome, crm in MEDICOS_POR_ESPECIALIDADE:
         if _garantir_medico(nome_esp, email, nome, crm):
             criados += 1
-
-    _migrar_legado_psiquiatria()
 
     for dados in RECEPCAO_DEMO:
         if _criar_recepcao(dados):
