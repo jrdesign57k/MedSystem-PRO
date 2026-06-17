@@ -19,7 +19,18 @@ def _carregar_statements():
         return []
     with open(_ARQUIVO, 'r', encoding='utf-8') as f:
         conteudo = f.read()
-    blocos = conteudo.split(SENTINELA)
+
+    # Divide apenas em linhas que SAO exatamente a sentinela (evita cortar
+    # quando o texto da sentinela aparece dentro de um comentario).
+    blocos, atual = [], []
+    for linha in conteudo.splitlines():
+        if linha.strip() == SENTINELA:
+            blocos.append('\n'.join(atual))
+            atual = []
+        else:
+            atual.append(linha)
+    blocos.append('\n'.join(atual))
+
     statements = []
     for bloco in blocos:
         # Remove linhas de comentario puro e espacos

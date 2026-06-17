@@ -1,7 +1,7 @@
 -- ============================================================
 -- 004 - OBJETOS DE BANCO (Views, Procedures com transacao, Triggers)
 -- Aplicado automaticamente pelo app (medsystem/database/db_objects.py).
--- IMPORTANTE: cada statement e separado pela linha sentinela "-- @@SPLIT@@".
+-- IMPORTANTE: cada statement e separado por uma linha sentinela propria.
 -- Nao usar DELIMITER aqui (a execucao e feita statement a statement via driver).
 -- ============================================================
 

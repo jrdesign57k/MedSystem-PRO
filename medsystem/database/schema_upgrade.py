@@ -20,6 +20,17 @@ MIGRACOES = {
     'receitas': [
         ('convenio', 'VARCHAR(100) NULL'),
     ],
+    'prescricoes': [
+        ('dosagem', 'VARCHAR(100) NULL'),
+        ('posologia', 'TEXT NULL'),
+        ('frequencia', 'VARCHAR(100) NULL'),
+        ('duracao', 'VARCHAR(100) NULL'),
+        ('quantidade', 'INT NULL'),
+        ('tipo_receita', 'VARCHAR(50) NULL'),
+        ('orientacoes', 'TEXT NULL'),
+        ('data_prescricao', 'DATETIME NULL DEFAULT CURRENT_TIMESTAMP'),
+        ('status', "VARCHAR(20) NULL DEFAULT 'ATIVA'"),
+    ],
     'diagnosticos': [
         ('id_paciente', 'INT NULL'),
         ('id_medico', 'INT NULL'),
