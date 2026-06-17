@@ -69,4 +69,4 @@ def aplicar_objetos_banco():
     finally:
         raw.close()
 
-    print(f'✓ Objetos de banco aplicados (ok={ok}, falhas={falhas})')
+    print(f'[OK] Objetos de banco aplicados (ok={ok}, falhas={falhas})')

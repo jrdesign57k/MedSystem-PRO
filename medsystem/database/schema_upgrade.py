@@ -143,5 +143,8 @@ def upgrade_schema():
 
     _backfill_referencias()
 
-    if alterou:
-        db.session.commit()
+    # Sempre encerra a transação aqui (commit), mesmo quando nenhuma coluna foi
+    # adicionada. O _backfill_referencias() roda UPDATEs em 'consulta'/'diagnosticos'
+    # que abrem uma transação; se ela ficar pendente, segura metadata locks e
+    # trava o aplicar_objetos_banco() (DROP/CREATE TRIGGER) num deadlock.
+    db.session.commit()

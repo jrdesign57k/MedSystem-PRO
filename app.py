@@ -98,9 +98,9 @@ def create_app():
                     ]
                     db.session.bulk_save_objects(especialidades_padrao)
                     db.session.commit()
-                    print("✓ 8 Especialidades médicas inseridas com sucesso!")
+                    print("[OK] 8 Especialidades medicas inseridas com sucesso!")
             except Exception as esp_err:
-                print(f"ℹ Nota: {esp_err}")
+                print(f"[INFO] Nota: {esp_err}")
 
             # Tabela de preços (Particular e Convênio)
             from models import PrecoConsulta
@@ -118,7 +118,7 @@ def create_app():
                 ]
                 db.session.bulk_save_objects(precos_padrao)
                 db.session.commit()
-                print("✓ Tabela de preços (Particular/Convênio) criada!")
+                print("[OK] Tabela de precos (Particular/Convenio) criada!")
 
             # Criação do usuário Administrador Principal
             admin = Usuario.query.filter_by(email='medico@medsystem.com').first()
@@ -181,7 +181,7 @@ def create_app():
     # ──── HANDLERS DE ERROS GLOBAIS ────
     @app.errorhandler(500)
     def handle_500_error(error):
-        print(f"\n✗ ERRO 500: {error}\n")
+        print(f"\n[ERRO] 500: {error}\n")
         import traceback
         traceback.print_exc()
         return jsonify({"error": "Internal Server Error", "message": str(error)}), 500

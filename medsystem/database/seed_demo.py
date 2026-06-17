@@ -62,7 +62,7 @@ def normalizar_gravidades():
             alterou = True
     if alterou:
         db.session.commit()
-        print('✓ Gravidades de diagnósticos normalizadas')
+        print('[OK] Gravidades de diagnosticos normalizadas')
 
 
 def _criar_consulta(medico, paciente, cfg, tipos=None):
@@ -147,7 +147,7 @@ def seed_pacientes_risco():
 
     medico = _medico_demo()
     if not medico:
-        print('ℹ Seed risco: médico demo não encontrado')
+        print('[INFO] Seed risco: medico demo nao encontrado')
         return False
 
     tipos = _tipos_exame()
@@ -289,7 +289,7 @@ def seed_pacientes_risco():
 
     if inseridos:
         db.session.commit()
-        print(f'✓ Seed risco: {inseridos} paciente(s)/consulta(s) clínicas inseridos')
+        print(f'[OK] Seed risco: {inseridos} paciente(s)/consulta(s) clinicas inseridos')
         print('  Sino: LEVE (Lucia), MÉDIO (Fernanda+Carlos), ALTO (Maria), CRÍTICO (Pedro)')
     return inseridos > 0
 
@@ -300,7 +300,7 @@ def seed_dados_demo():
 
     medico = _medico_demo()
     if not medico:
-        print('ℹ Seed demo: médico drcarlos@medsystem.com não encontrado — pulando')
+        print('[INFO] Seed demo: medico drcarlos@medsystem.com nao encontrado - pulando')
         return False
 
     if not Usuario.query.filter_by(email='recepcao@medsystem.com').first():
@@ -460,7 +460,7 @@ def seed_dados_demo():
         ])
 
     db.session.commit()
-    print('✓ Dados demo base inseridos')
+    print('[OK] Dados demo base inseridos')
     return True
 
 
@@ -495,7 +495,7 @@ def seed_cid10():
     for item in cid_data:
         db.session.add(CID10(**item))
     db.session.commit()
-    print(f'✓ {len(cid_data)} registros de CID-10 inseridos')
+    print(f'[OK] {len(cid_data)} registros de CID-10 inseridos')
 
 
 def executar_seeds():
