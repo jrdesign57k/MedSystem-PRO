@@ -303,11 +303,6 @@ def seed_dados_demo():
         print('[INFO] Seed demo: medico drcarlos@medsystem.com nao encontrado - pulando')
         return False
 
-    if not Usuario.query.filter_by(email='recepcao@medsystem.com').first():
-        rec = Usuario(nome='Ana Recepção', email='recepcao@medsystem.com', tipo='recepcao', ativo=True)
-        rec.set_senha('MedSystem12#')
-        db.session.add(rec)
-
     tipos = _tipos_exame()
     hoje = date.today()
 

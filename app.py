@@ -150,11 +150,18 @@ def create_app():
                 medico_record = Medico(
                     id_usuario=user.id,
                     crm="SP123456",
-                    id_especialidade=2
+                    id_especialidade=(
+                        Especialidade.query.filter_by(nome='Clínica Geral').first().id
+                        if Especialidade.query.filter_by(nome='Clínica Geral').first()
+                        else 1
+                    )
                 )
                 db.session.add(medico_record)
 
             db.session.commit()
+
+            from medsystem.database.seed_usuarios import seed_usuarios_demo
+            seed_usuarios_demo()
 
             from medsystem.database.seed_demo import executar_seeds
             executar_seeds()

@@ -7,6 +7,14 @@ let slotSelecionado = '';
 // ══════════════════════════════════════
 // LOGIN / LOGOUT - INTEGRADO COM BACKEND
 // ══════════════════════════════════════
+function limparCamposLogin() {
+  const email = document.getElementById('login-email');
+  const senha = document.getElementById('login-senha');
+  if (email) email.value = '';
+  if (senha) senha.value = '';
+}
+window.limparCamposLogin = limparCamposLogin;
+
 function doLogin() {
   const emailEl = document.getElementById('login-email');
   const senhaEl = document.getElementById('login-senha');
@@ -191,7 +199,7 @@ function doLogout() {
     appScreen.classList.remove('active');
   }
   if (loginScreen) loginScreen.style.display = 'flex';
-  document.getElementById('login-senha').value = '';
+  limparCamposLogin();
   document.getElementById('login-error').style.display = 'none';
   document.getElementById('login-email').classList.remove('error');
   document.getElementById('login-senha').classList.remove('error');
@@ -989,6 +997,10 @@ async function novoUsuario() {
 
 // MOBILE: Toggle do sidebar com overlay
 document.addEventListener('DOMContentLoaded', function() {
+  limparCamposLogin();
+  setTimeout(limparCamposLogin, 100);
+  setTimeout(limparCamposLogin, 500);
+
   const btn = document.getElementById('mobile-menu-btn');
   const sidebar = document.querySelector('.sidebar');
   const overlay = document.getElementById('sidebarOverlay');
