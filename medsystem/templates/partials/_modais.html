@@ -97,19 +97,20 @@
     </div>
     <div class="modal-body">
       <div class="form-grid mb16">
-        <div class="form-group"><label>Paciente</label><select><option>Selecionar...</option><option>João da Silva</option><option>Maria Oliveira</option></select></div>
-        <div class="form-group"><label>Tipo de Receita</label><select><option>Simples</option><option>Controlada Azul</option></select></div>
-        <div class="form-group"><label>Medicamento</label><input placeholder="Nome do medicamento + dosagem"/></div>
-        <div class="form-group"><label>Posologia</label><input placeholder="Ex: 1 comp. 8/8h"/></div>
-        <div class="form-group"><label>Duração</label><input placeholder="Ex: 7 dias"/></div>
-        <div class="form-group"><label>Quantidade</label><input placeholder="Ex: 21 comprimidos"/></div>
-        <div class="form-group full"><label>Orientações ao Paciente</label><textarea style="min-height:60px" placeholder="Tome com água, evite álcool..."></textarea></div>
+        <div class="form-group"><label>Paciente</label><select id="rx-modal-paciente"><option value="">Carregando...</option></select></div>
+        <div class="form-group"><label>Tipo de Receita</label><select id="rx-modal-tipo"><option>Simples</option><option>Controlada Azul</option><option>Controlada Amarela</option></select></div>
+        <div class="form-group"><label>Medicamento</label><input id="rx-modal-med" placeholder="Nome do medicamento + dosagem"/></div>
+        <div class="form-group"><label>Posologia</label><input id="rx-modal-pos" placeholder="Ex: 1 comp. 8/8h"/></div>
+        <div class="form-group"><label>Duração</label><input id="rx-modal-dur" placeholder="Ex: 7 dias"/></div>
+        <div class="form-group"><label>Quantidade</label><input id="rx-modal-qtd" placeholder="Ex: 21 comprimidos"/></div>
+        <div class="form-group full"><label>Orientações ao Paciente</label><textarea id="rx-modal-orient" style="min-height:60px" placeholder="Tome com água, evite álcool..."></textarea></div>
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('modal-prescricao')">Cancelar</button>
-      <button class="btn btn-success" onclick="closeModal('modal-prescricao');showToast('Receita emitida com sucesso!','success')">
-        <svg viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Emitir Receita
+      <button type="button" class="btn btn-outline" onclick="closeModal('modal-prescricao')">Cancelar</button>
+      <button type="button" class="btn btn-outline" onclick="salvarRascunhoReceita(true)">Salvar Rascunho</button>
+      <button type="button" class="btn btn-success" id="btn-modal-gerar-receita" onclick="emitirReceita(true)">
+        <svg viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Gerar &amp; Imprimir
       </button>
     </div>
   </div>

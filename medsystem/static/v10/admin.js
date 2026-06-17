@@ -355,6 +355,13 @@ function limparForm() {
   const npEmail = document.getElementById('np-email');
   const npSangue = document.getElementById('np-sangue');
   const npEndereco = document.getElementById('np-endereco');
+  const npCep = document.getElementById('np-cep');
+  const npLogradouro = document.getElementById('np-logradouro');
+  const npNumero = document.getElementById('np-numero');
+  const npComplemento = document.getElementById('np-complemento');
+  const npBairro = document.getElementById('np-bairro');
+  const npCidade = document.getElementById('np-cidade');
+  const npUf = document.getElementById('np-uf');
   const npAlergias = document.getElementById('np-alergias');
   const npObservacoes = document.getElementById('np-observacoes');
   
@@ -372,6 +379,13 @@ function limparForm() {
   if (npEmail) npEmail.value = '';
   if (npSangue) npSangue.value = '';
   if (npEndereco) npEndereco.value = '';
+  if (npCep) npCep.value = '';
+  if (npLogradouro) npLogradouro.value = '';
+  if (npNumero) npNumero.value = '';
+  if (npComplemento) npComplemento.value = '';
+  if (npBairro) npBairro.value = '';
+  if (npCidade) npCidade.value = '';
+  if (npUf) npUf.value = '';
   if (npAlergias) npAlergias.value = '';
   if (npObservacoes) npObservacoes.value = '';
   if (npPeso) npPeso.value = '';

@@ -13,7 +13,7 @@
           <div class="form-group"><label>Sexo <span class="req">*</span></label>
             <select id="np-sexo"><option value="M">Masculino</option><option value="F">Feminino</option><option value="O">Outro</option></select>
           </div>
-          <div class="form-group"><label>Telefone</label><input id="np-tel" placeholder="(XX) 9XXXX-XXXX"/></div>
+          <div class="form-group"><label>Telefone</label><input id="np-tel" type="tel" inputmode="numeric" maxlength="15" data-mask="telefone" placeholder="(34) 99858-2010"/></div>
           <div class="form-group"><label>E-mail</label><input id="np-email" placeholder="paciente@email.com"/></div>
           <div class="form-group"><label>Tipo Sanguíneo</label>
             <select id="np-sangue"><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option><option>O+</option><option>O-</option></select>
@@ -21,7 +21,18 @@
           <div class="form-group"><label>Convênio</label>
             <select><option>Particular</option><option>Unimed</option><option>SulAmérica</option><option>Bradesco Saúde</option><option>Amil</option></select>
           </div>
-          <div class="form-group full"><label>Endereço</label><input id="np-end" placeholder="Rua, Nº, Bairro, Cidade — UF"/></div>
+          <div class="form-group"><label>CEP</label>
+            <div class="input-with-btn">
+              <input id="np-cep" type="text" inputmode="numeric" maxlength="9" data-mask="cep" placeholder="00000-000"/>
+              <button type="button" class="btn btn-outline btn-sm" onclick="buscarCep()">Buscar</button>
+            </div>
+          </div>
+          <div class="form-group full"><label>Rua / Logradouro</label><input id="np-logradouro" placeholder="Nome da rua"/></div>
+          <div class="form-group"><label>Número</label><input id="np-numero" placeholder="Ex: 120"/></div>
+          <div class="form-group"><label>Complemento</label><input id="np-complemento" placeholder="Apto, bloco, casa..."/></div>
+          <div class="form-group"><label>Bairro</label><input id="np-bairro" placeholder="Bairro"/></div>
+          <div class="form-group"><label>Cidade</label><input id="np-cidade" placeholder="Cidade"/></div>
+          <div class="form-group"><label>UF</label><input id="np-uf" maxlength="2" placeholder="SP" style="text-transform:uppercase"/></div>
           <div class="form-group full"><label>Alergias</label><input id="np-alerg" placeholder="Ex: Penicilina, Dipirona..."/></div>
           <div class="form-group full"><label>Comorbidades</label><input placeholder="Ex: HAS, DM2, Asma..."/></div>
           <div class="form-group full"><label>Observações Clínicas</label><textarea id="np-obs" placeholder="Histórico relevante, comorbidades, contexto clínico..."></textarea></div>

@@ -450,7 +450,7 @@ async function carregarPacientes() {
           <td>${paciente.nome}</td>
           <td>${paciente.cpf}</td>
           <td>${dataFmt}</td>
-          <td>${paciente.telefone || '—'}</td>
+          <td>${typeof formatarTelefone === 'function' ? formatarTelefone(paciente.telefone) : (paciente.telefone || '—')}</td>
           <td>${btnPront || '<span class="text-3">—</span>'}</td>
         `;
         tbody.appendChild(tr);
@@ -555,7 +555,16 @@ async function cadastrarPaciente() {
   const enderecoEl = document.getElementById('np-endereco') || document.getElementById('np-end');
   const alergiasEl = document.getElementById('np-alergias') || document.getElementById('np-alerg');
   const observacoesEl = document.getElementById('np-observacoes') || document.getElementById('np-obs');
-  const endereco = enderecoEl ? enderecoEl.value.trim() : '';
+  const endereco = typeof montarEnderecoCompleto === 'function'
+    ? montarEnderecoCompleto()
+    : (enderecoEl ? enderecoEl.value.trim() : '');
+  const cep = document.getElementById('np-cep')?.value?.replace(/\D/g, '') || null;
+  const logradouro = document.getElementById('np-logradouro')?.value?.trim() || null;
+  const numero = document.getElementById('np-numero')?.value?.trim() || null;
+  const complemento = document.getElementById('np-complemento')?.value?.trim() || null;
+  const bairro = document.getElementById('np-bairro')?.value?.trim() || null;
+  const cidade = document.getElementById('np-cidade')?.value?.trim() || null;
+  const uf = document.getElementById('np-uf')?.value?.trim().toUpperCase() || null;
   const alergias = alergiasEl ? alergiasEl.value.trim() : '';
   const observacoes = observacoesEl ? observacoesEl.value.trim() : '';
   
@@ -615,6 +624,13 @@ async function cadastrarPaciente() {
         email: email,
         tipo_sanguineo: sangue || null,
         endereco: endereco || null,
+        cep: cep,
+        logradouro: logradouro,
+        numero: numero,
+        complemento: complemento,
+        bairro: bairro,
+        cidade: cidade,
+        uf: uf,
         alergias: alergias || null,
         observacoes: observacoes || null,
         peso: peso ? parseFloat(peso) : null,
@@ -638,6 +654,10 @@ async function cadastrarPaciente() {
       if (document.getElementById('np-email')) document.getElementById('np-email').value = '';
       if (document.getElementById('np-sangue')) document.getElementById('np-sangue').value = '';
       if (enderecoEl) enderecoEl.value = '';
+      ['np-cep','np-logradouro','np-numero','np-complemento','np-bairro','np-cidade','np-uf'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
       if (alergiasEl) alergiasEl.value = '';
       if (observacoesEl) observacoesEl.value = '';
       if (document.getElementById('np-peso')) document.getElementById('np-peso').value = '';

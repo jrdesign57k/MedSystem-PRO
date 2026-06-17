@@ -57,6 +57,7 @@ def create_app():
         from medsystem.routes.cid10 import cid10_bp
         from medsystem.routes.mensagens import mensagens_bp
         from medsystem.routes.relatorios import relatorios_bp
+        from medsystem.routes.prescricoes import prescricoes_bp
 
         # Registro das rotas da API
         app.register_blueprint(auth_bp, url_prefix='/api/auth')
@@ -70,6 +71,7 @@ def create_app():
         app.register_blueprint(cid10_bp, url_prefix='/api/cid10')
         app.register_blueprint(mensagens_bp, url_prefix='/api/mensagens')
         app.register_blueprint(relatorios_bp, url_prefix='/api/relatorios')
+        app.register_blueprint(prescricoes_bp, url_prefix='/api/prescricoes')
 
         # ──── CRIAÇÃO DO BANCO E DADOS INICIAIS ────
         try:

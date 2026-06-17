@@ -14,6 +14,21 @@ async function apiGet(url) {
   return res.json();
 }
 
+async function apiPost(url, body) {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: apiHeaders(),
+    body: JSON.stringify(body || {}),
+  });
+  let json = {};
+  try { json = await res.json(); } catch (e) {
+    json = { sucesso: false, mensagem: 'Resposta invalida do servidor' };
+  }
+  if (!res.ok) json.sucesso = false;
+  if (!json.mensagem && !res.ok) json.mensagem = 'Erro HTTP ' + res.status;
+  return json;
+}
+
 function carregarModuloPro(pageId) {
   const loaders = {
     dashboard: () => typeof carregarDashboard === 'function' && carregarDashboard(),
@@ -26,6 +41,7 @@ function carregarModuloPro(pageId) {
     relatorios: carregarRelatorios,
     equipe: carregarEquipe,
     mensagens: carregarMensagens,
+    prescricoes: carregarPrescricoes,
     // prontuário: aberto via abrirProntuario() / abrirProntuarioInicio() — não resetar aqui
     novo_paciente: () => typeof carregarPacientes === 'function' && carregarPacientes()
   };
@@ -140,7 +156,7 @@ async function verAgendamento(idConsulta) {
     set('agend-medico', medico);
     set('agend-tipo', c.tipo_consulta || 'Consulta');
     set('agend-convenio', c.convenio || 'Particular');
-    set('agend-telefone', telefone);
+    set('agend-telefone', typeof formatarTelefone === 'function' ? formatarTelefone(telefone) : telefone);
     set('agend-motivo', c.motivo || 'Não informado');
 
     const avatar = document.getElementById('agend-avatar');
@@ -958,6 +974,279 @@ function aplicarPermissoesProntuario(user) {
   });
 }
 
+function _popularSelectPacientes(selectEl, pacientes, placeholder) {
+  if (!selectEl) return;
+  selectEl.innerHTML = `<option value="">${placeholder}</option>`;
+  (pacientes || []).forEach(p => {
+    const id = p.id || p.id_paciente;
+    selectEl.innerHTML += `<option value="${id}">${p.nome} (CPF: ${_fmtCpf(p.cpf)})</option>`;
+  });
+}
+
+async function _carregarPacientesParaSelect(selectIds) {
+  try {
+    const json = await apiGet('/api/pacientes?por_pagina=500');
+    if (!json.sucesso) return;
+    const lista = json.dados || [];
+    selectIds.forEach(id => _popularSelectPacientes(document.getElementById(id), lista, 'Selecione o paciente...'));
+  } catch (e) {
+    console.error('Erro ao carregar pacientes:', e);
+  }
+}
+
+function _coletarMedicamentosPagina() {
+  return Array.from(document.querySelectorAll('#med-list .rx-item')).map(item => ({
+    medicamento: item.querySelector('.rx-med-nome')?.value?.trim() || '',
+    posologia: item.querySelector('.rx-med-pos')?.value?.trim() || '',
+    duracao: item.querySelector('.rx-med-dur')?.value?.trim() || '',
+  })).filter(m => m.medicamento);
+}
+
+function _badgeTipoReceita(tipo) {
+  if (!tipo) return '<span class="badge badge-blue">Simples</span>';
+  if (tipo.includes('Azul')) return '<span class="badge badge-amber">C. Azul</span>';
+  if (tipo.includes('Amarela')) return '<span class="badge badge-amber">C. Amarela</span>';
+  return '<span class="badge badge-blue">Simples</span>';
+}
+
+async function carregarPrescricoes() {
+  await _carregarPacientesParaSelect(['rx-paciente-select', 'rx-modal-paciente']);
+  await carregarHistoricoPrescricoes();
+  _vincularBotoesPrescricao();
+}
+
+function _vincularBotoesPrescricao() {
+  const btnGerar = document.getElementById('btn-gerar-receita');
+  if (btnGerar && !btnGerar.dataset.bound) {
+    btnGerar.dataset.bound = '1';
+    btnGerar.addEventListener('click', (e) => {
+      e.preventDefault();
+      emitirReceita(false);
+    });
+  }
+  const btnModal = document.getElementById('btn-modal-gerar-receita');
+  if (btnModal && !btnModal.dataset.bound) {
+    btnModal.dataset.bound = '1';
+    btnModal.addEventListener('click', (e) => {
+      e.preventDefault();
+      emitirReceita(true);
+    });
+  }
+}
+
+async function carregarHistoricoPrescricoes() {
+  const tbody = document.getElementById('rx-historico-tbody');
+  if (!tbody) return;
+  try {
+    const json = await apiGet('/api/prescricoes');
+    if (!json.sucesso || !json.dados?.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="text-sm text-3">Nenhuma receita emitida ainda.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = json.dados.map(p => `
+      <tr>
+        <td class="td-mono">${p.numero || ('R' + String(p.id).padStart(4, '0'))}</td>
+        <td class="td-name">${p.paciente_nome || '—'}</td>
+        <td class="td-mono">${p.data_fmt || '—'}</td>
+        <td>${p.medicamento || '—'}</td>
+        <td>${_badgeTipoReceita(p.tipo_receita)}</td>
+        <td><button type="button" class="btn btn-ghost btn-sm" title="Baixar PDF" onclick="reimprimirReceita(${p.id})">PDF</button></td>
+      </tr>
+    `).join('');
+  } catch (e) {
+    tbody.innerHTML = '<tr><td colspan="6" class="text-sm text-3">Erro ao carregar histórico.</td></tr>';
+  }
+}
+
+function _pdfDisponivel() {
+  return !!(window.jspdf && window.jspdf.jsPDF);
+}
+
+function _autoTableDisponivel(doc) {
+  return doc && typeof doc.autoTable === 'function';
+}
+
+function gerarReceitaPDF(receita) {
+  try {
+    if (!_pdfDisponivel()) {
+      showToast('Biblioteca PDF indisponivel. Recarregue a pagina.', 'error');
+      return false;
+    }
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    if (!_autoTableDisponivel(doc)) {
+      showToast('Plugin de tabela PDF nao carregou. Recarregue a pagina.', 'error');
+      return false;
+    }
+
+    doc.setFontSize(18);
+    doc.setTextColor(26, 86, 219);
+    doc.text('MedSystem PRO — Receituario', 14, 20);
+    doc.setFontSize(11);
+    doc.setTextColor(90, 90, 90);
+    doc.text('Tipo: ' + (receita.tipo_receita || 'Simples'), 14, 28);
+    doc.text('Gerado em: ' + new Date().toLocaleString('pt-BR'), 14, 34);
+
+    let y = 42;
+
+    y = _autoTabelaProntuario(doc, y, ['Campo', 'Paciente'], _linhasProntuario([
+      ['Numero', receita.numero],
+      ['Paciente', receita.paciente],
+      ['CPF', receita.cpf],
+      ['Data', receita.data],
+      ['Tipo de Receita', receita.tipo_receita],
+    ]));
+
+    const meds = receita.medicamentos || [];
+    if (meds.length) {
+      doc.autoTable({
+        startY: y,
+        head: [['Medicamento', 'Posologia', 'Duracao']],
+        body: meds.map(m => {
+          let pos = m.posologia || '—';
+          if (m.quantidade) pos += (pos !== '—' ? ' · ' : '') + 'Qtd: ' + m.quantidade;
+          return [m.medicamento || '—', pos, m.duracao || '—'];
+        }),
+        theme: 'striped',
+        headStyles: { fillColor: [37, 99, 235] },
+        styles: { fontSize: 10, overflow: 'linebreak' },
+        margin: { left: 14, right: 14 },
+      });
+      y = doc.lastAutoTable.finalY + 8;
+    }
+
+    if (receita.orientacoes) {
+      doc.autoTable({
+        startY: y,
+        head: [['Orientacoes ao Paciente']],
+        body: [[receita.orientacoes]],
+        theme: 'striped',
+        headStyles: { fillColor: [37, 99, 235] },
+        styles: { fontSize: 10, overflow: 'linebreak' },
+        margin: { left: 14, right: 14 },
+      });
+      y = doc.lastAutoTable.finalY + 8;
+    }
+
+    const crmEsp = [
+      receita.crm ? 'CRM ' + receita.crm : '',
+      receita.especialidade || 'Clinica Geral',
+    ].filter(Boolean).join(' · ');
+    _autoTabelaProntuario(doc, y, ['Medico', 'CRM / Especialidade'], [
+      [receita.medico || '—', crmEsp || '—'],
+    ]);
+
+    const slug = (receita.paciente || 'paciente')
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^\w]+/g, '-').toLowerCase().replace(/^-|-$/g, '').slice(0, 30);
+    const nomeArquivo = (receita.numero || 'receita').toLowerCase() + '-' + (slug || 'paciente') + '.pdf';
+    doc.save(nomeArquivo);
+    showToast('Receita gerada e PDF baixado!', 'success');
+    return true;
+  } catch (err) {
+    console.error('gerarReceitaPDF:', err);
+    showToast('Erro ao gerar PDF: ' + (err.message || 'falha desconhecida'), 'error');
+    return false;
+  }
+}
+
+function imprimirReceita(receita) {
+  return gerarReceitaPDF(receita);
+}
+
+function _coletarDadosReceita(modal) {
+  if (modal) {
+    const med = document.getElementById('rx-modal-med')?.value?.trim();
+    if (!med) return null;
+    return {
+      id_paciente: document.getElementById('rx-modal-paciente')?.value,
+      tipo: document.getElementById('rx-modal-tipo')?.value,
+      orientacoes: document.getElementById('rx-modal-orient')?.value?.trim() || '',
+      medicamentos: [{
+        medicamento: med,
+        posologia: document.getElementById('rx-modal-pos')?.value?.trim() || '',
+        duracao: document.getElementById('rx-modal-dur')?.value?.trim() || '',
+        quantidade: document.getElementById('rx-modal-qtd')?.value?.trim() || null,
+      }],
+    };
+  }
+  return {
+    id_paciente: document.getElementById('rx-paciente-select')?.value,
+    tipo: document.getElementById('rx-tipo-select')?.value,
+    orientacoes: document.getElementById('rx-orientacoes')?.value?.trim() || '',
+    medicamentos: _coletarMedicamentosPagina(),
+  };
+}
+
+async function _salvarReceita(gerarPdf, modal) {
+  const dados = _coletarDadosReceita(modal);
+  if (!dados) { showToast('Informe o medicamento', 'warn'); return; }
+  if (!dados.id_paciente) { showToast('Selecione um paciente', 'warn'); return; }
+  if (!dados.medicamentos.length) { showToast('Informe ao menos um medicamento', 'warn'); return; }
+
+  const btnId = modal ? 'btn-modal-gerar-receita' : 'btn-gerar-receita';
+  const btn = document.getElementById(btnId);
+  const labelOriginal = btn ? btn.innerHTML : '';
+  if (btn) { btn.disabled = true; btn.textContent = 'Gerando...'; }
+
+  try {
+    const json = await apiPost('/api/prescricoes', {
+      id_paciente: parseInt(dados.id_paciente, 10),
+      tipo_receita: dados.tipo,
+      orientacoes: dados.orientacoes,
+      medicamentos: dados.medicamentos,
+    });
+    if (!json.sucesso) {
+      showToast(json.mensagem || 'Erro ao emitir receita', 'error');
+      return;
+    }
+    if (modal) closeModal('modal-prescricao');
+    if (gerarPdf) {
+      if (json.receita) {
+        const ok = imprimirReceita(json.receita);
+        if (!ok) showToast('Receita salva, mas o PDF nao foi gerado.', 'warn');
+      } else {
+        showToast('Receita salva, mas dados do PDF indisponiveis.', 'warn');
+      }
+    } else {
+      showToast('Receita salva com sucesso!', 'success');
+    }
+    await carregarHistoricoPrescricoes();
+  } catch (e) {
+    console.error('emitir receita:', e);
+    showToast('Erro de conexao ao emitir receita', 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = labelOriginal; }
+  }
+}
+
+async function emitirReceita(modal) {
+  if (typeof emitirReceita._busy !== 'undefined' && emitirReceita._busy) return;
+  emitirReceita._busy = true;
+  try {
+    await _salvarReceita(true, !!modal);
+  } finally {
+    emitirReceita._busy = false;
+  }
+}
+
+async function salvarRascunhoReceita(modal) {
+  return _salvarReceita(false, !!modal);
+}
+
+async function reimprimirReceita(idPrescricao) {
+  try {
+    const json = await apiGet('/api/prescricoes/' + idPrescricao + '/receita');
+    if (!json.sucesso || !json.receita) {
+      showToast(json.mensagem || 'Nao foi possivel carregar a receita', 'error');
+      return;
+    }
+    imprimirReceita(json.receita);
+  } catch (e) {
+    showToast('Erro ao gerar PDF da receita', 'error');
+  }
+}
+
 function _fmtCpf(cpf) {
   const s = (cpf || '').replace(/\D/g, '');
   if (s.length === 11) return s.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
@@ -1009,7 +1298,7 @@ async function carregarListaPacientesProntuario() {
   const sel = document.getElementById('pront-paciente-select');
   if (!sel) return;
   try {
-    const json = await apiGet('/api/pacientes');
+    const json = await apiGet('/api/pacientes?por_pagina=500');
     if (!json.sucesso) return;
     sel.innerHTML = '<option value="">Selecione o paciente...</option>';
     (json.dados || []).forEach(p => {
@@ -1133,7 +1422,8 @@ async function carregarProntuarioConsulta(idConsulta) {
     document.querySelector('#page-prontuario .pront-avatar').textContent = nome.substring(0, 2).toUpperCase();
     document.getElementById('pront-cpf').textContent = _fmtCpf(p.cpf);
     document.getElementById('pront-idade').textContent = _calcIdade(p.data_nascimento);
-    document.getElementById('pront-tel').textContent = p.telefone || '—';
+    document.getElementById('pront-tel').textContent =
+      typeof formatarTelefone === 'function' ? formatarTelefone(p.telefone) : (p.telefone || '—');
     document.getElementById('pront-alergias').innerHTML = p.alergias
       ? '<span class="allergy-tag">⚠ ' + p.alergias + '</span>'
       : '';
@@ -1253,6 +1543,176 @@ async function salvarProntuario(finalizar) {
   }
 }
 
+function _coletarDadosProntuarioImpressao() {
+  const val = id => document.getElementById(id)?.value?.trim() || '';
+  const txt = id => document.getElementById(id)?.textContent?.trim() || '';
+  const examesEl = document.getElementById('pront-exames-list');
+  let exames = 'Nenhum exame solicitado nesta consulta.';
+  if (examesEl) {
+    const chips = examesEl.querySelectorAll('.chip');
+    if (chips.length) {
+      exames = Array.from(chips).map(c => c.textContent.trim()).join(' · ');
+    }
+  }
+  const cidVisivel = document.getElementById('pront-cid-box')?.style.display !== 'none';
+  const vitais = [
+    val('pront-temp') && `Temp: ${val('pront-temp')} °C`,
+    val('pront-fc') && `FC: ${val('pront-fc')} bpm`,
+    val('pront-fr') && `FR: ${val('pront-fr')} rpm`,
+    val('pront-pa') && `PA: ${val('pront-pa')} mmHg`,
+    val('pront-spo2') && `SpO2: ${val('pront-spo2')}%`,
+    val('pront-peso') && `Peso: ${val('pront-peso')} kg`,
+  ].filter(Boolean).join(' · ');
+
+  return {
+    subtitulo: document.getElementById('pront-subtitulo')?.textContent || 'Prontuario Eletronico',
+    paciente: document.querySelector('#page-prontuario .pront-nome')?.textContent || '—',
+    cpf: document.getElementById('pront-cpf')?.textContent || '—',
+    idade: document.getElementById('pront-idade')?.textContent || '—',
+    tel: document.getElementById('pront-tel')?.textContent || '—',
+    alergias: (document.getElementById('pront-alergias')?.textContent || '').replace('⚠', '').trim(),
+    queixa: val('pront-queixa'),
+    hma: val('pront-hma'),
+    ap: val('pront-ap'),
+    af: val('pront-af'),
+    vitais,
+    exameFisico: val('pront-exame-fisico'),
+    hipotese: val('pront-hipotese'),
+    plano: val('pront-plano'),
+    cid: cidVisivel ? `${txt('pront-cid-codigo')} — ${txt('pront-cid-desc')}` : '',
+    gravidade: cidVisivel ? txt('pront-cid-grav') : '',
+    exames,
+    medico: document.getElementById('pront-medico-nome')?.textContent || '—',
+    medicoCrm: document.getElementById('pront-medico-crm')?.textContent || '—',
+    data: new Date().toLocaleDateString('pt-BR'),
+  };
+}
+
+function _linhasProntuario(pares) {
+  return pares
+    .filter(([, v]) => v != null && String(v).trim() && String(v).trim() !== '—')
+    .map(([k, v]) => [k, String(v)]);
+}
+
+function _autoTabelaProntuario(doc, startY, head, body) {
+  if (!body.length) return startY;
+  const duasColunas = head.length === 2;
+  doc.autoTable({
+    startY,
+    head: [head],
+    body,
+    theme: 'striped',
+    headStyles: { fillColor: [37, 99, 235] },
+    styles: { fontSize: 10, overflow: 'linebreak', cellPadding: 3 },
+    columnStyles: duasColunas
+      ? { 0: { cellWidth: 58, fontStyle: 'bold' }, 1: { cellWidth: 'auto' } }
+      : {},
+    margin: { left: 14, right: 14 },
+  });
+  return doc.lastAutoTable.finalY + 8;
+}
+
+function gerarProntuarioPDF(d) {
+  if (!window.jspdf || !window.jspdf.jsPDF) {
+    showToast('Biblioteca de PDF nao carregada. Verifique a conexao.', 'error');
+    return false;
+  }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  doc.setFontSize(18);
+  doc.setTextColor(26, 86, 219);
+  doc.text('MedSystem PRO — Prontuário', 14, 20);
+  doc.setFontSize(11);
+  doc.setTextColor(90, 90, 90);
+  doc.text(d.subtitulo || 'Prontuario eletronico', 14, 28);
+  doc.text('Gerado em: ' + new Date().toLocaleString('pt-BR'), 14, 34);
+
+  let y = 42;
+
+  y = _autoTabelaProntuario(doc, y, ['Campo', 'Paciente'], _linhasProntuario([
+    ['Nome', d.paciente],
+    ['CPF', d.cpf],
+    ['Idade', d.idade],
+    ['Telefone', d.tel],
+    ['Alergias', d.alergias],
+  ]));
+
+  y = _autoTabelaProntuario(doc, y, ['Campo', 'Anamnese'], _linhasProntuario([
+    ['Queixa Principal', d.queixa],
+    ['Historia da Molestia Atual', d.hma],
+    ['Antecedentes Pessoais', d.ap],
+    ['Antecedentes Familiares', d.af],
+  ]));
+
+  if (d.vitais) {
+    y = _autoTabelaProntuario(doc, y, ['Sinais Vitais', 'Valor'], [['Registro', d.vitais]]);
+  }
+
+  const exameRows = _linhasProntuario([['Achados do Exame Fisico', d.exameFisico]]);
+  if (exameRows.length) {
+    y = _autoTabelaProntuario(doc, y, ['Campo', 'Exame Fisico'], exameRows);
+  }
+
+  if (d.cid) {
+    const partes = d.cid.split(' — ');
+    const codigo = partes[0] || d.cid;
+    const descricao = partes.slice(1).join(' — ') || d.hipotese || '—';
+    doc.autoTable({
+      startY: y,
+      head: [['CID', 'Diagnostico', 'Gravidade']],
+      body: [[codigo, descricao, d.gravidade || '—']],
+      theme: 'striped',
+      headStyles: { fillColor: [37, 99, 235] },
+      styles: { fontSize: 10, overflow: 'linebreak' },
+      margin: { left: 14, right: 14 },
+    });
+    y = doc.lastAutoTable.finalY + 8;
+  }
+
+  const diagRows = _linhasProntuario([
+    ['Hipotese Diagnostica', d.hipotese],
+    ['Plano Terapeutico', d.plano],
+  ]);
+  if (diagRows.length) {
+    y = _autoTabelaProntuario(doc, y, ['Campo', 'Conduta'], diagRows);
+  }
+
+  if (d.exames) {
+    doc.autoTable({
+      startY: y,
+      head: [['Exames Solicitados']],
+      body: [[d.exames]],
+      theme: 'striped',
+      headStyles: { fillColor: [37, 99, 235] },
+      styles: { fontSize: 10, overflow: 'linebreak' },
+      margin: { left: 14, right: 14 },
+    });
+    y = doc.lastAutoTable.finalY + 8;
+  }
+
+  const crmEsp = (d.medicoCrm || '—').replace(/^CRM\s*/i, '');
+  _autoTabelaProntuario(doc, y, ['Medico', 'CRM / Especialidade'], [
+    [d.medico || '—', crmEsp],
+  ]);
+
+  const slug = (d.paciente || 'paciente')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^\w]+/g, '-').toLowerCase().replace(/^-|-$/g, '').slice(0, 40);
+  doc.save('prontuario-' + (slug || 'paciente') + '.pdf');
+  showToast('PDF do prontuario exportado!', 'success');
+  return true;
+}
+
+function imprimirProntuario() {
+  const area = document.getElementById('pront-area-clinica');
+  if (!area || area.style.display === 'none') {
+    showToast('Abra um prontuario antes de imprimir', 'warn');
+    return;
+  }
+  gerarProntuarioPDF(_coletarDadosProntuarioImpressao());
+}
+
 window.podeAcessarProntuario = podeAcessarProntuario;
 window.aplicarPermissoesProntuario = aplicarPermissoesProntuario;
 window.abrirProntuarioInicio = abrirProntuarioInicio;
@@ -1262,6 +1722,12 @@ window.trocarConsultaProntuario = trocarConsultaProntuario;
 window.carregarProntuarioConsulta = carregarProntuarioConsulta;
 window.salvarProntuario = salvarProntuario;
 window.assinarProntuario = assinarProntuario;
+window.imprimirProntuario = imprimirProntuario;
+window.carregarPrescricoes = carregarPrescricoes;
+window.emitirReceita = emitirReceita;
+window.salvarRascunhoReceita = salvarRascunhoReceita;
+window.reimprimirReceita = reimprimirReceita;
+window.gerarReceitaPDF = gerarReceitaPDF;
 
 let _searchTimer = null;
 function fecharBuscaGlobal() {
@@ -1319,7 +1785,8 @@ document.addEventListener('click', (e) => {
 });
 
 function limparForm() {
-  ['np-nome','np-cpf','np-nasc','np-tel','np-email','np-end','np-alerg','np-obs'].forEach(id => {
+  ['np-nome','np-cpf','np-nasc','np-tel','np-email','np-cep','np-logradouro','np-numero',
+   'np-complemento','np-bairro','np-cidade','np-uf','np-alerg','np-obs'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -1379,4 +1846,5 @@ document.addEventListener('DOMContentLoaded', async function () {
     localStorage.removeItem('token');
     localStorage.removeItem('usuario');
   }
+  if (typeof _vincularBotoesPrescricao === 'function') _vincularBotoesPrescricao();
 });

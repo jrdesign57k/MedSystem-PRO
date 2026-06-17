@@ -114,7 +114,16 @@ function addMed() {
   if (!list) return;
   const div = document.createElement('div');
   div.className = 'rx-item';
-  div.innerHTML = '<div class="form-group"><label>Medicamento</label><input placeholder="Nome + dose"/></div>';
+  div.style.cssText = 'margin-bottom:8px;display:flex;gap:8px;align-items:flex-start';
+  div.innerHTML = `
+    <div style="flex:1">
+      <div class="form-grid-3" style="gap:8px">
+        <div class="form-group"><label>Medicamento</label><input class="rx-med-nome" placeholder="Ex: Paracetamol 500mg"/></div>
+        <div class="form-group"><label>Posologia</label><input class="rx-med-pos" placeholder="Ex: 1 comp. 8/8h"/></div>
+        <div class="form-group"><label>Duração</label><input class="rx-med-dur" placeholder="Ex: 7 dias"/></div>
+      </div>
+    </div>
+    <button class="btn btn-ghost btn-sm no-print" style="color:var(--red-light);margin-top:18px" onclick="this.closest('.rx-item').remove()">✕</button>`;
   list.appendChild(div);
 }
 document.addEventListener('click', e => {

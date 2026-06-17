@@ -67,16 +67,129 @@ function aplicarMascaraCPF(input) {
   input.value = v;
 }
 
+// Formatar telefone brasileiro: (34) 99858-2010 ou (34) 3456-7890
+function formatarTelefone(valor) {
+  const v = String(valor || '').replace(/\D/g, '').slice(0, 11);
+  if (!v) return '';
+  if (v.length <= 2) return '(' + v;
+  if (v.length <= 6) return '(' + v.slice(0, 2) + ') ' + v.slice(2);
+  if (v.length <= 10) {
+    return '(' + v.slice(0, 2) + ') ' + v.slice(2, 6) + '-' + v.slice(6);
+  }
+  return '(' + v.slice(0, 2) + ') ' + v.slice(2, 7) + '-' + v.slice(7);
+}
+
 function aplicarMascaraTelefone(input) {
-  let v = input.value.replace(/\D/g,'').slice(0,11);
-  v = v.replace(/^(\d{2})(\d)/,'($1) $2');
-  v = v.replace(/(\d{5})(\d)/,'$1-$2');
+  const cursor = input.selectionStart;
+  const digitsBefore = input.value.slice(0, cursor).replace(/\D/g, '').length;
+  input.value = formatarTelefone(input.value);
+  let pos = 0;
+  let count = 0;
+  while (pos < input.value.length && count < digitsBefore) {
+    if (/\d/.test(input.value[pos])) count++;
+    pos++;
+  }
+  input.setSelectionRange(pos, pos);
+}
+
+function aplicarMascaraCEP(input) {
+  let v = input.value.replace(/\D/g, '').slice(0, 8);
+  if (v.length > 5) v = v.slice(0, 5) + '-' + v.slice(5);
   input.value = v;
+}
+
+function montarEnderecoCompleto() {
+  const log = document.getElementById('np-logradouro')?.value?.trim() || '';
+  const num = document.getElementById('np-numero')?.value?.trim() || '';
+  const comp = document.getElementById('np-complemento')?.value?.trim() || '';
+  const bairro = document.getElementById('np-bairro')?.value?.trim() || '';
+  const cidade = document.getElementById('np-cidade')?.value?.trim() || '';
+  const uf = document.getElementById('np-uf')?.value?.trim() || '';
+  const cep = document.getElementById('np-cep')?.value?.trim() || '';
+
+  const ruaNum = [log, num].filter(Boolean).join(', ');
+  const cidadeUf = [cidade, uf].filter(Boolean).join('/');
+  const partes = [ruaNum, comp, bairro, cidadeUf, cep ? 'CEP ' + cep : ''].filter(Boolean);
+  return partes.length ? partes.join(' — ') : null;
+}
+
+async function buscarCep() {
+  const input = document.getElementById('np-cep');
+  if (!input) return;
+  const cep = input.value.replace(/\D/g, '');
+  if (cep.length !== 8) {
+    if (typeof showToast === 'function') showToast('Informe um CEP com 8 digitos', 'warn');
+    input.focus();
+    return;
+  }
+
+  const btn = document.querySelector('#page-novo_paciente .input-with-btn .btn');
+  if (btn) { btn.disabled = true; btn.textContent = '...'; }
+
+  try {
+    const res = await fetch('https://viacep.com.br/ws/' + cep + '/json/');
+    const data = await res.json();
+    if (data.erro) {
+      if (typeof showToast === 'function') showToast('CEP nao encontrado', 'error');
+      return;
+    }
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+    set('np-logradouro', data.logradouro);
+    set('np-bairro', data.bairro);
+    set('np-cidade', data.localidade);
+    set('np-uf', data.uf);
+    if (data.complemento) set('np-complemento', data.complemento);
+    document.getElementById('np-numero')?.focus();
+    if (typeof showToast === 'function') showToast('Endereco encontrado pelo CEP', 'success');
+  } catch (e) {
+    if (typeof showToast === 'function') showToast('Erro ao buscar CEP. Tente novamente.', 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Buscar'; }
+  }
 }
 
 function aplicarMascaraCRM(input) {
   input.value = input.value.replace(/\D/g,'').slice(0, 6);
 }
+
+function vincularMascara(input, tipo) {
+  if (!input || input.dataset.maskBound) return;
+  input.dataset.maskBound = '1';
+  const handlers = {
+    cpf: () => aplicarMascaraCPF(input),
+    telefone: () => aplicarMascaraTelefone(input),
+    cep: () => aplicarMascaraCEP(input),
+    crm: () => aplicarMascaraCRM(input),
+  };
+  const fn = handlers[tipo];
+  if (!fn) return;
+  input.addEventListener('input', fn);
+  input.addEventListener('blur', fn);
+  if (tipo === 'cep') {
+    input.addEventListener('blur', () => {
+      if (input.value.replace(/\D/g, '').length === 8) buscarCep();
+    });
+  }
+  if (input.value) fn();
+}
+
+function inicializarMascaras() {
+  const ids = { 'np-tel': 'telefone', 'np-cpf': 'cpf', 'nm-crm': 'crm' };
+  Object.entries(ids).forEach(([id, tipo]) => {
+    const el = document.getElementById(id);
+    if (el) vincularMascara(el, tipo);
+  });
+  document.querySelectorAll('[data-mask="telefone"]').forEach(el => vincularMascara(el, 'telefone'));
+  document.querySelectorAll('[data-mask="cpf"]').forEach(el => vincularMascara(el, 'cpf'));
+  document.querySelectorAll('[data-mask="cep"]').forEach(el => vincularMascara(el, 'cep'));
+}
+
+document.addEventListener('DOMContentLoaded', inicializarMascaras);
+
+window.formatarTelefone = formatarTelefone;
+window.inicializarMascaras = inicializarMascaras;
+window.buscarCep = buscarCep;
+window.montarEnderecoCompleto = montarEnderecoCompleto;
 
 // ══════════════════════════════════════════════════════════
 // VALIDAÇÃO DE FORÇA DE SENHA
