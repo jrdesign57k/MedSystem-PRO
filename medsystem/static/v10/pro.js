@@ -271,11 +271,12 @@ async function buscarCID(q) {
   }
   try {
     const json = await apiGet('/api/cid10/busca?q=' + encodeURIComponent(q));
-    if (!json.sucesso || !json.dados?.length) {
+    const lista = json.cids || json.dados || [];
+    if (!json.sucesso || !lista.length) {
       el.innerHTML = '<div style="padding:20px;text-align:center;color:#999">Nenhum resultado</div>';
       return;
     }
-    el.innerHTML = json.dados.map(c =>
+    el.innerHTML = lista.map(c =>
       `<div onclick="showToast('CID ${c.codigo} selecionado','success')" style="padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer">
         <strong>${c.codigo}</strong> — ${c.descricao}
       </div>`

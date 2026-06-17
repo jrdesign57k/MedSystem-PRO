@@ -6,7 +6,7 @@ from datetime import datetime, date, timedelta
 from extensions import db
 from models import (
     Usuario, Medico, Paciente, Consulta, SinalVital, Diagnostico,
-    Exame, TipoExame, Receita, Despesa, PrecoConsulta
+    Exame, TipoExame, Receita, Despesa, PrecoConsulta, CID10
 )
 
 MARCA_CPF = '52998224725'  # Carlos Alberto — prontuário médio (MODERADA)
@@ -464,8 +464,43 @@ def seed_dados_demo():
     return True
 
 
+def seed_cid10():
+    """Popula a tabela CID-10 (busca de diagnósticos). Idempotente."""
+    if CID10.query.first():
+        return
+    cid_data = [
+        {'codigo': 'I10', 'descricao': 'Hipertensão Arterial Sistêmica', 'categoria': 'Cardiovascular'},
+        {'codigo': 'I25', 'descricao': 'Doença isquêmica crônica do coração', 'categoria': 'Cardiovascular'},
+        {'codigo': 'I63', 'descricao': 'Acidente vascular cerebral isquêmico', 'categoria': 'Cardiovascular'},
+        {'codigo': 'J06.9', 'descricao': 'Infecção aguda VAS não especificada', 'categoria': 'Respiratória'},
+        {'codigo': 'J45', 'descricao': 'Asma', 'categoria': 'Respiratória'},
+        {'codigo': 'J20.9', 'descricao': 'Bronquite aguda', 'categoria': 'Respiratória'},
+        {'codigo': 'E11', 'descricao': 'Diabetes Mellitus tipo 2', 'categoria': 'Endócrina'},
+        {'codigo': 'E10', 'descricao': 'Diabetes Mellitus tipo 1', 'categoria': 'Endócrina'},
+        {'codigo': 'R73.0', 'descricao': 'Glicemia de jejum alterada', 'categoria': 'Endócrina'},
+        {'codigo': 'M54', 'descricao': 'Dorsalgia', 'categoria': 'Musculoesquelética'},
+        {'codigo': 'M79.3', 'descricao': 'Mialgia', 'categoria': 'Musculoesquelética'},
+        {'codigo': 'M17', 'descricao': 'Gonartrose (artrose de joelho)', 'categoria': 'Musculoesquelética'},
+        {'codigo': 'F41', 'descricao': 'Ansiedade', 'categoria': 'Mental'},
+        {'codigo': 'F32', 'descricao': 'Depressão unipolar', 'categoria': 'Mental'},
+        {'codigo': 'F43.2', 'descricao': 'Transtorno de ajustamento', 'categoria': 'Mental'},
+        {'codigo': 'K21', 'descricao': 'Doença do refluxo gastroesofágico', 'categoria': 'Digestiva'},
+        {'codigo': 'K29', 'descricao': 'Gastrite', 'categoria': 'Digestiva'},
+        {'codigo': 'K59.1', 'descricao': 'Diarreia', 'categoria': 'Digestiva'},
+        {'codigo': 'N39.0', 'descricao': 'Infecção do trato urinário', 'categoria': 'Genitourinária'},
+        {'codigo': 'N40', 'descricao': 'Hiperplasia da próstata', 'categoria': 'Genitourinária'},
+        {'codigo': 'L89', 'descricao': 'Úlcera de pressão', 'categoria': 'Dermatológica'},
+        {'codigo': 'L30', 'descricao': 'Dermatite', 'categoria': 'Dermatológica'},
+    ]
+    for item in cid_data:
+        db.session.add(CID10(**item))
+    db.session.commit()
+    print(f'✓ {len(cid_data)} registros de CID-10 inseridos')
+
+
 def executar_seeds():
     """Roda todos os seeds de demonstração."""
+    seed_cid10()
     normalizar_gravidades()
     seed_dados_demo()
     seed_pacientes_risco()
