@@ -99,6 +99,40 @@ Tabelas · Stored Procedures · Triggers · Views (agenda, financeiro, exames pe
 
 ---
 
+## 7b. Banco em detalhe (modelagem relacional avançada)
+
+MySQL 8 no RDS, com **duas camadas**: o app usa o ORM (SQLAlchemy) para o CRUD do dia a dia; por baixo há objetos de banco que mostram modelagem avançada. **Tudo criado automaticamente no startup.**
+
+**As 4 peças**
+- **Tabelas** (~15): criadas pelo SQLAlchemy a partir de `models.py`.
+- **Views** (4): `vw_agenda_hoje`, `vw_historico_paciente`, `vw_financeiro_mensal`, `vw_exames_pendentes`. Encapsulam JOINs complexos. → Demo ao vivo: card "Financeiro Mensal" em **Relatórios** lê `vw_financeiro_mensal`.
+- **Procedures** (6) com **transação**: `sp_cadastrar_paciente`, `sp_agendar_consulta`, `sp_registrar_pagamento`... usam `START TRANSACTION` + `COMMIT`/`ROLLBACK` e validações (CPF duplicado, conflito de horário).
+- **Triggers** (6): auditoria automática em `logs_auditoria` a cada INSERT/UPDATE/DELETE.
+
+**Fluxo no deploy (automático, nada manual)**
+```
+App sobe na EC2
+ 1. SQLAlchemy cria as TABELAS
+ 2. schema_upgrade ajusta colunas
+ 3. db_objects cria VIEWS + PROCEDURES + TRIGGERS (migrations/004_objetos_banco.sql)
+ 4. SEED roda → INSERTs disparam TRIGGERS → logs_auditoria nasce populada
+```
+
+**3 provas rápidas na demo**
+| Recurso | Como mostrar |
+|---------|--------------|
+| View | Relatórios → card "Financeiro Mensal · via VIEW" |
+| Procedure + transação | `CALL sp_cadastrar_paciente(...)` no cliente SQL |
+| Trigger | `SELECT * FROM logs_auditoria ORDER BY id DESC;` |
+
+**Se perguntarem "por que lógica no banco se já tem no app?"**
+> Camadas complementares: o app valida para a UX; o banco garante integridade independente de quem acessa — transações evitam dados pela metade, triggers garantem auditoria sempre, views centralizam consultas complexas.
+
+**Cola de uma linha**
+> "MySQL no RDS com ORM para o CRUD, mais views, procedures transacionais e triggers de auditoria — criados automaticamente no deploy e demonstráveis ao vivo."
+
+---
+
 ## 8. Segurança
 
 HTTPS · S3 privado · API via CloudFront · RDS sem IP público · Bcrypt + JWT · segredos fora do Git

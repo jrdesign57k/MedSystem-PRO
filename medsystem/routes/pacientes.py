@@ -104,20 +104,24 @@ def buscar_por_cpf(cpf):
 @pacientes_bp.route('/buscar', methods=['GET'])
 @jwt_required()
 def buscar_por_nome():
-    """Busca pacientes por nome"""
+    """Busca pacientes por nome ou CPF (aceita os parametros 'q' ou 'nome')."""
     try:
-        nome = request.args.get('nome', '', type=str)
-        
-        if not nome:
+        termo = (request.args.get('q') or request.args.get('nome') or '').strip()
+
+        if not termo:
             return jsonify({
                 'sucesso': False,
-                'mensagem': 'Informe um nome para buscar'
+                'mensagem': 'Informe um termo para buscar'
             }), 400
-        
+
+        like = f'%{termo}%'
         pacientes = Paciente.query.filter(
-            Paciente.nome.ilike(f'%{nome}%'),
+            db.or_(
+                Paciente.nome.ilike(like),
+                Paciente.cpf.ilike(like)
+            ),
             Paciente.ativo == True
-        ).all()
+        ).limit(20).all()
         
         return jsonify({
             'sucesso': True,

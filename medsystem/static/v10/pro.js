@@ -1264,29 +1264,59 @@ window.salvarProntuario = salvarProntuario;
 window.assinarProntuario = assinarProntuario;
 
 let _searchTimer = null;
+function fecharBuscaGlobal() {
+  const box = document.getElementById('globalSearchResults');
+  if (box) box.classList.remove('open');
+}
+
+function abrirPacienteDaBusca(id) {
+  fecharBuscaGlobal();
+  const input = document.getElementById('globalSearch');
+  if (input) input.value = '';
+  if (typeof podeAcessarProntuario === 'function' && podeAcessarProntuario() && typeof abrirProntuario === 'function') {
+    abrirProntuario(id);
+  } else {
+    showPage('pacientes');
+  }
+}
+window.abrirPacienteDaBusca = abrirPacienteDaBusca;
+
 function globalSearchFn(val) {
   clearTimeout(_searchTimer);
-  if (!val || val.length < 2) return;
+  const box = document.getElementById('globalSearchResults');
+  if (!box) return;
+  const termo = (val || '').trim();
+  if (termo.length < 2) { fecharBuscaGlobal(); return; }
+
   _searchTimer = setTimeout(async () => {
     try {
-      const json = await apiGet('/api/pacientes/buscar?q=' + encodeURIComponent(val));
-      if (json.sucesso && json.dados?.length) {
-        showPage('pacientes');
-        const tbody = document.querySelector('#tabela-pacientes tbody');
-        if (tbody) {
-          const podePront = podeAcessarProntuario();
-          tbody.innerHTML = json.dados.map(p => {
-            const id = p.id || p.id_paciente;
-            const acao = podePront
-              ? `<button class="btn btn-outline btn-sm btn-prontuario" onclick="abrirProntuario(${id})">Prontuário</button>`
-              : '—';
-            return `<tr><td>${p.nome}</td><td>${p.cpf}</td><td>${p.telefone || '—'}</td><td>${acao}</td></tr>`;
-          }).join('');
-        }
+      const json = await apiGet('/api/pacientes/buscar?q=' + encodeURIComponent(termo));
+      const lista = json.dados || [];
+      if (!json.sucesso) { fecharBuscaGlobal(); return; }
+
+      if (!lista.length) {
+        box.innerHTML = '<div class="search-empty">Nenhum paciente encontrado</div>';
+      } else {
+        box.innerHTML = lista.map(p => {
+          const id = p.id || p.id_paciente;
+          const nome = String(p.nome || '').replace(/</g, '&lt;');
+          const cpf = String(p.cpf || '—').replace(/</g, '&lt;');
+          return `<div class="search-item" onclick="abrirPacienteDaBusca(${id})">
+            <div><div class="si-nome">${nome}</div><div class="si-cpf">CPF: ${cpf}</div></div>
+            <span class="si-go">abrir →</span>
+          </div>`;
+        }).join('');
       }
-    } catch (e) { console.error('Busca:', e); }
-  }, 350);
+      box.classList.add('open');
+    } catch (e) { console.error('Busca:', e); fecharBuscaGlobal(); }
+  }, 300);
 }
+window.globalSearchFn = globalSearchFn;
+
+document.addEventListener('click', (e) => {
+  const wrap = document.querySelector('.topbar-search');
+  if (wrap && !wrap.contains(e.target)) fecharBuscaGlobal();
+});
 
 function limparForm() {
   ['np-nome','np-cpf','np-nasc','np-tel','np-email','np-end','np-alerg','np-obs'].forEach(id => {

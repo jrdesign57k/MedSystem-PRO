@@ -1,8 +1,10 @@
 <header class="topbar">
   <div class="topbar-search">
     <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-    <input placeholder="Buscar paciente, consulta, exame..." id="globalSearch" oninput="globalSearchFn(this.value)"/>
+    <input placeholder="Buscar paciente por nome ou CPF..." id="globalSearch" autocomplete="off"
+           oninput="globalSearchFn(this.value)" onfocus="globalSearchFn(this.value)"/>
     <span class="topbar-search-hint">⌘K</span>
+    <div class="search-results" id="globalSearchResults"></div>
   </div>
 
   <div class="topbar-right">
