@@ -77,6 +77,11 @@ def create_app():
             upgrade_schema()
             db.create_all()
 
+            # Cria views, procedures (com transacao) e triggers de auditoria.
+            # Roda antes do seed para os triggers auditarem os inserts demo.
+            from medsystem.database.db_objects import aplicar_objetos_banco
+            aplicar_objetos_banco()
+
             # Inserção automática de Especialidades
             from models import Especialidade, Medico
             try:

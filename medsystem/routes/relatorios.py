@@ -7,9 +7,39 @@ from flask_jwt_extended import jwt_required
 from app import db
 from models import Consulta, Diagnostico, Medico, Paciente, Exame
 from datetime import datetime, timedelta
-from sqlalchemy import func
+from sqlalchemy import func, text
 
 relatorios_bp = Blueprint('relatorios', __name__)
+
+
+# ════════════════════════════════════════════════════════════
+# GET /api/relatorios/financeiro-mensal
+# Lê DIRETAMENTE a VIEW de banco vw_financeiro_mensal (demonstra uso de view)
+# ════════════════════════════════════════════════════════════
+@relatorios_bp.route('/financeiro-mensal', methods=['GET'])
+@jwt_required()
+def relatorio_financeiro_view():
+    try:
+        rows = db.session.execute(text(
+            "SELECT ano, mes, total_recebido, total_pendente, total_registros "
+            "FROM vw_financeiro_mensal"
+        )).mappings().all()
+        return jsonify({
+            'sucesso': True,
+            'fonte': 'view:vw_financeiro_mensal',
+            'meses': [
+                {
+                    'ano': int(r['ano']) if r['ano'] is not None else None,
+                    'mes': int(r['mes']) if r['mes'] is not None else None,
+                    'total_recebido': float(r['total_recebido'] or 0),
+                    'total_pendente': float(r['total_pendente'] or 0),
+                    'total_registros': int(r['total_registros'] or 0),
+                }
+                for r in rows
+            ]
+        })
+    except Exception as e:
+        return jsonify({'sucesso': False, 'erro': str(e)}), 500
 
 # ════════════════════════════════════════════════════════════
 # GET /api/relatorios

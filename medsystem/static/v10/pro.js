@@ -534,10 +534,35 @@ async function carregarRelatorios(comAviso) {
       }
     }
 
+    carregarFinanceiroView();
+
     if (comAviso) showToast('Relatório gerado!', 'success');
   } catch (e) {
     console.error('Erro relatórios:', e);
     if (comAviso) showToast('Erro ao gerar relatório', 'error');
+  }
+}
+
+async function carregarFinanceiroView() {
+  const el = document.getElementById('rel-financeiro-view');
+  if (!el) return;
+  const meses = ['', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+  const fmt = (v) => 'R$ ' + Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  try {
+    const json = await apiGet('/api/relatorios/financeiro-mensal');
+    if (!json.sucesso || !json.meses?.length) {
+      el.innerHTML = '<div class="text-3 text-sm" style="text-align:center;padding:12px">Sem dados financeiros</div>';
+      return;
+    }
+    el.innerHTML = `<table class="table" style="width:100%">
+      <thead><tr><th>Período</th><th>Recebido</th><th>Pendente</th><th>Registros</th></tr></thead>
+      <tbody>${json.meses.map(m =>
+        `<tr><td>${meses[m.mes] || m.mes}/${m.ano}</td><td>${fmt(m.total_recebido)}</td><td>${fmt(m.total_pendente)}</td><td>${m.total_registros}</td></tr>`
+      ).join('')}</tbody>
+    </table>`;
+  } catch (e) {
+    console.error('Erro view financeiro:', e);
+    el.innerHTML = '<div class="text-3 text-sm" style="text-align:center;padding:12px">Erro ao carregar</div>';
   }
 }
 
