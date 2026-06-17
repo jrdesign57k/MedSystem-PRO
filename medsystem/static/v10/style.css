@@ -226,6 +226,8 @@ body { font-family:var(--font); background:var(--bg); color:var(--text); min-hei
 
 .login-footer { text-align:center; margin-top:22px; font-size:11px; color:var(--text3); }
 
+.login-mobile-header { display:none; }
+
 /* ═══════════════════════════════════════
    APP SCREEN
 ═══════════════════════════════════════ */
@@ -572,8 +574,109 @@ iframe { max-width: 100%; width: 100%; height: auto; }
 
 @media(max-width:1100px) {
   .login-left { display:none; }
-  .login-right { width:100%; }
+  .login-right {
+    width:100%;
+    flex:1;
+    padding:24px 20px;
+    align-items:center;
+  }
+  .login-mobile-header { display:flex; }
+  .login-card { max-width:440px; }
 }
+
+/* ── Login mobile ── */
+@media (max-width: 768px) {
+  #login-screen {
+    flex-direction:column;
+    justify-content:flex-start;
+    align-items:stretch;
+    min-height:100vh;
+    min-height:100dvh;
+    overflow-x:hidden;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  .login-orbs .login-orb { opacity:.35; filter:blur(48px); }
+  .login-orbs .orb-1 { width:280px; height:280px; }
+  .login-orbs .orb-2 { width:320px; height:320px; }
+  .login-orbs .orb-3 { width:200px; height:200px; }
+
+  .login-right {
+    width:100%;
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    padding:max(16px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom));
+    box-sizing:border-box;
+  }
+
+  .login-mobile-header {
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin-bottom:20px;
+    color:#fff;
+    flex-shrink:0;
+  }
+  .login-mobile-header-icon {
+    width:48px; height:48px;
+    background:#fff;
+    border-radius:14px;
+    padding:6px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:0 8px 24px rgba(0,0,0,.2);
+  }
+  .login-mobile-header-icon img { width:100%; height:100%; object-fit:contain; }
+  .login-mobile-header-title { font-size:20px; font-weight:700; letter-spacing:-.3px; }
+  .login-mobile-header-sub { font-size:12px; opacity:.85; margin-top:2px; }
+
+  .login-card {
+    width:100%;
+    max-width:none;
+    padding:28px 22px 24px;
+    border-radius:20px;
+    margin:0;
+    box-shadow:0 20px 50px rgba(0,0,0,.28);
+  }
+
+  .login-card-logo {
+    width:56px; height:56px;
+    margin-bottom:14px;
+    border-radius:16px;
+  }
+
+  .login-card-title { font-size:21px; }
+  .login-card-sub { font-size:13px; margin-bottom:22px; }
+
+  .login-field { margin-bottom:16px; }
+  .login-field label { font-size:13px; margin-bottom:6px; }
+  .login-field input {
+    font-size:16px;
+    padding:14px 14px 14px 44px;
+    border-radius:12px;
+    min-height:48px;
+    box-sizing:border-box;
+  }
+  .login-input-wrap input[type="password"],
+  .login-input-wrap input#login-senha { padding-right:48px; }
+  .login-eye { width:36px; height:36px; right:6px; }
+
+  .login-btn {
+    padding:15px;
+    font-size:15px;
+    min-height:50px;
+    margin-top:8px;
+    border-radius:12px;
+  }
+
+  .login-error { font-size:13px; padding:12px; margin-bottom:14px; }
+  .login-footer { margin-top:18px; font-size:11px; }
+}
+
 @media(max-width:900px) {
   .stats-grid { grid-template-columns:1fr 1fr; }
   .two-col, .three-col { grid-template-columns:1fr; }
@@ -591,20 +694,11 @@ iframe { max-width: 100%; width: 100%; height: auto; }
   
   .app-wrapper { display: flex; flex-direction: column-reverse; }
   
-  .sidebar { 
-    position: fixed;
-    left: -100%;
-    top: 0;
+  .sidebar {
     width: 80vw;
     max-width: 300px;
-    height: 100vh;
-    z-index: 1000;
-    transition: left 0.3s ease;
-    background: var(--surface);
     overflow-y: auto;
   }
-  
-  .sidebar.open { left: 0; }
   
   .main { 
     flex: 1;
@@ -639,6 +733,18 @@ iframe { max-width: 100%; width: 100%; height: auto; }
   
   .login-card { padding: 20px 16px; }
   .login-hint { font-size: 11px; padding: 10px; }
+
+  #login-screen { padding-bottom: env(safe-area-inset-bottom); }
+  .login-right { padding: 12px 14px 20px; justify-content: flex-start; padding-top: max(12px, env(safe-area-inset-top)); }
+  .login-mobile-header { margin-bottom: 16px; }
+  .login-mobile-header-title { font-size: 18px; }
+  .login-card { padding: 22px 18px 20px; border-radius: 18px; }
+  .login-card-logo { width: 52px; height: 52px; margin-bottom: 12px; }
+  .login-card-title { font-size: 19px; }
+  .login-card-sub { font-size: 12px; margin-bottom: 18px; }
+  .login-field input { font-size: 16px; padding: 13px 13px 13px 42px; min-height: 46px; }
+  .login-btn { padding: 14px; font-size: 15px; min-height: 48px; }
+  .login-hint { font-size: 11px; padding: 8px; }
   
   .nav-item { padding: 10px 12px; gap: 12px; font-size: 13px; }
   .nav-item svg { width: 18px; height: 18px; }
@@ -662,14 +768,7 @@ iframe { max-width: 100%; width: 100%; height: auto; }
 @media (max-width: 480px) {
   body { font-size: 12px; }
   
-  .login-screen { min-height: auto; }
   .login-left { display: none !important; }
-  .login-right { width: 100%; padding: 16px; }
-  .login-card { padding: 16px; border-radius: 16px 16px 0 0; margin-top: auto; }
-  .login-card-title { font-size: 16px; }
-  .login-field input { font-size: 16px; padding: 11px; }
-  .login-btn { padding: 11px; font-size: 13px; width: 100%; }
-  .login-hint { font-size: 11px; padding: 8px; }
   
   .main { padding: 12px; }
   .page-title { font-size: 18px; }

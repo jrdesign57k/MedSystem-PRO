@@ -14,11 +14,24 @@ function showPage(id) {
   if (window.innerWidth <= 1024) closeSidebar();
 }
 
+const SIDEBAR_ICON_MENU = '<svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>';
+const SIDEBAR_ICON_CLOSE = '<svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+
+function syncSidebarToggle() {
+  const btn = document.getElementById('sidebarToggle');
+  if (!btn) return;
+  const open = document.body.classList.contains('sidebar-open');
+  btn.setAttribute('aria-label', open ? 'Fechar menu' : 'Abrir menu');
+  btn.innerHTML = open ? SIDEBAR_ICON_CLOSE : SIDEBAR_ICON_MENU;
+}
+
 function toggleSidebar() {
   document.body.classList.toggle('sidebar-open');
+  syncSidebarToggle();
 }
 function closeSidebar() {
   document.body.classList.remove('sidebar-open');
+  syncSidebarToggle();
 }
 
 function switchTab(btn, id) {

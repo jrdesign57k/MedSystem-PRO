@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<title>MedSystem PRO — Apresentação Amostratec</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    font-size: 10.5pt;
+    line-height: 1.45;
+    color: #1e293b;
+    background: #fff;
+    max-width: 210mm;
+    margin: 0 auto;
+    padding: 18mm 16mm;
+  }
+  .cover {
+    text-align: center;
+    padding: 28mm 0 22mm;
+    border-bottom: 3px solid #2563eb;
+    margin-bottom: 16px;
+  }
+  .cover h1 { font-size: 26pt; color: #0f172a; letter-spacing: -0.5px; margin-bottom: 6px; }
+  .cover .sub { font-size: 13pt; color: #475569; margin-bottom: 14px; }
+  .cover .meta { font-size: 10pt; color: #64748b; }
+  .badge {
+    display: inline-block; background: #eff6ff; color: #2563eb;
+    font-size: 9pt; font-weight: 600; padding: 4px 10px; border-radius: 20px;
+    margin-top: 10px;
+  }
+  h2 {
+    font-size: 13pt; color: #0f172a; margin: 18px 0 8px;
+    padding-bottom: 4px; border-bottom: 2px solid #e2e8f0;
+    page-break-after: avoid;
+  }
+  h3 { font-size: 11pt; color: #334155; margin: 12px 0 6px; page-break-after: avoid; }
+  p { margin-bottom: 8px; }
+  ul { margin: 0 0 10px 18px; }
+  li { margin-bottom: 3px; }
+  table {
+    width: 100%; border-collapse: collapse; margin: 8px 0 12px;
+    font-size: 9.5pt; page-break-inside: avoid;
+  }
+  th, td { border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left; vertical-align: top; }
+  th { background: #f1f5f9; font-weight: 600; color: #0f172a; }
+  tr:nth-child(even) td { background: #f8fafc; }
+  .box {
+    background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #2563eb;
+    padding: 10px 12px; margin: 10px 0; border-radius: 0 6px 6px 0;
+    page-break-inside: avoid;
+  }
+  .box.green { border-left-color: #16a34a; }
+  .box.amber { border-left-color: #d97706; }
+  .quote {
+    font-style: italic; color: #334155; background: #eff6ff;
+    padding: 10px 14px; border-radius: 8px; margin: 10px 0;
+    page-break-inside: avoid;
+  }
+  pre {
+    font-family: Consolas, "Courier New", monospace; font-size: 8pt;
+    background: #0f172a; color: #e2e8f0; padding: 12px 14px;
+    border-radius: 8px; overflow-x: auto; line-height: 1.35;
+    margin: 8px 0 12px; page-break-inside: avoid;
+  }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .checklist li { list-style: none; margin-left: -18px; }
+  .checklist li::before { content: "☐ "; color: #2563eb; font-weight: bold; }
+  .footer {
+    margin-top: 20px; padding-top: 10px; border-top: 1px solid #e2e8f0;
+    font-size: 9pt; color: #64748b; text-align: center;
+  }
+  .page-break { page-break-before: always; }
+  @media print {
+    body { padding: 0; }
+    .no-print { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <h1>MedSystem PRO</h1>
+  <div class="sub">Sistema de Gestão Clínica + Arquitetura Cloud AWS</div>
+  <div class="meta">Amostratec · Cloud Computing · MedSystem Team</div>
+  <div class="badge">Flask · MySQL · Terraform · AWS</div>
+</div>
+
+<h2>1. O que é o projeto</h2>
+<p>O <strong>MedSystem PRO</strong> é um sistema web completo para gestão de consultório/clínica. Centraliza agenda, prontuário eletrônico, exames, prescrições, diagnósticos (CID-10), financeiro, relatórios, equipe e mensagens internas — tudo integrado em uma única aplicação.</p>
+
+<div class="quote">
+  "Desenvolvemos um sistema clínico funcional e o publicamos na AWS com Terraform: um único <code>terraform apply</code> sobe rede, banco privado, API, frontend no S3 e HTTPS via CloudFront."
+</div>
+
+<h3>Login de demonstração</h3>
+<table>
+  <tr><th>Campo</th><th>Valor</th></tr>
+  <tr><td>E-mail</td><td>medico@medsystem.com</td></tr>
+  <tr><td>Senha</td><td>MedSystem12#</td></tr>
+  <tr><td>Repositório</td><td>github.com/jrdesign57k/MedSystem-PRO</td></tr>
+</table>
+
+<h2>2. Módulos do sistema</h2>
+<table>
+  <tr><th>Módulo</th><th>Função principal</th></tr>
+  <tr><td>Dashboard</td><td>Indicadores do dia: consultas, pacientes, alertas</td></tr>
+  <tr><td>Agenda</td><td>Calendário semanal de consultas (clicável)</td></tr>
+  <tr><td>Pacientes</td><td>Cadastro completo: dados pessoais, endereço, emergência, alergias</td></tr>
+  <tr><td>Consultas</td><td>Agendamento, status e histórico</td></tr>
+  <tr><td>Prontuário</td><td>Anamnese, exame físico, sinais vitais, conduta</td></tr>
+  <tr><td>Prescrições</td><td>Receituários e medicamentos</td></tr>
+  <tr><td>Exames</td><td>Solicitação e acompanhamento</td></tr>
+  <tr><td>Diagnósticos</td><td>Registro clínico com CID-10</td></tr>
+  <tr><td>Financeiro</td><td>Receitas, despesas e preços por consulta</td></tr>
+  <tr><td>Relatórios</td><td>Indicadores e exportação PDF</td></tr>
+  <tr><td>Equipe / Mensagens</td><td>Usuários, médicos e comunicação interna</td></tr>
+</table>
+
+<h2>3. Stack tecnológica</h2>
+<div class="two-col">
+  <div>
+    <h3>Backend</h3>
+    <ul>
+      <li>Python 3 / Flask</li>
+      <li>SQLAlchemy (ORM)</li>
+      <li>MySQL 8.0</li>
+      <li>JWT + Bcrypt</li>
+      <li>API REST (JSON)</li>
+    </ul>
+  </div>
+  <div>
+    <h3>Frontend</h3>
+    <ul>
+      <li>HTML5 + Jinja2 (partials)</li>
+      <li>CSS3 responsivo (PRO design)</li>
+      <li>JavaScript vanilla</li>
+      <li>Interface desktop e mobile</li>
+    </ul>
+  </div>
+</div>
+
+<h2>4. Arquitetura da aplicação</h2>
+<pre>
+┌─────────────────────────────────────────────┐
+│           FRONTEND (Browser)                 │
+│   HTML + CSS + JS — página única (SPA-like) │
+└──────────────────────┬──────────────────────┘
+                       │ REST API + JWT
+┌──────────────────────▼──────────────────────┐
+│         BACKEND Flask (Python)               │
+│   11 blueprints: auth, pacientes, consultas… │
+└──────────────────────┬──────────────────────┘
+                       │ MySQL (3306)
+┌──────────────────────▼──────────────────────┐
+│         BANCO MySQL 8.0                      │
+│   Tabelas + Procedures + Triggers + Views    │
+└─────────────────────────────────────────────┘
+</pre>
+
+<h3>Endpoints da API</h3>
+<table>
+  <tr><th>Módulo</th><th>Rota</th></tr>
+  <tr><td>Autenticação</td><td>/api/auth</td></tr>
+  <tr><td>Pacientes</td><td>/api/pacientes</td></tr>
+  <tr><td>Consultas</td><td>/api/consultas</td></tr>
+  <tr><td>Exames / Dashboard</td><td>/api/exames · /api/dashboard</td></tr>
+  <tr><td>Prontuários</td><td>/api/prontuarios</td></tr>
+  <tr><td>Financeiro / Relatórios</td><td>/api/financeiro · /api/relatorios</td></tr>
+  <tr><td>CID-10 / Mensagens</td><td>/api/cid10 · /api/mensagens</td></tr>
+</table>
+
+<div class="page-break"></div>
+
+<h2>5. Arquitetura em nuvem (AWS) — Foco principal</h2>
+<pre>
+                    INTERNET
+                        │
+                        ▼
+             ┌─────────────────────┐
+             │  CloudFront (CDN)    │  ← HTTPS (entrada única)
+             └──────────┬──────────┘
+        / (site)       │       /api/* (API)
+  ┌─────────────┐      │   ┌──────────────────┐
+  │ S3 Frontend │◄─────┘   │ EC2 Flask :5000  │
+  │ index.html  │   OAC    │ subnet pública   │
+  │ /static/... │          └────────┬─────────┘
+  └─────────────┘                   │ rede privada
+                                    ▼
+                          ┌──────────────────┐
+                          │ RDS MySQL 8.0     │
+                          │ subnets privadas  │
+                          │ (sem IP público)  │
+                          └──────────────────┘
+</pre>
+
+<h3>Serviços AWS utilizados</h3>
+<table>
+  <tr><th>Serviço</th><th>Função no projeto</th></tr>
+  <tr><td>VPC + Subnets + IGW</td><td>Rede isolada (pública + privada)</td></tr>
+  <tr><td>EC2 (t2.micro)</td><td>Backend Flask com systemd</td></tr>
+  <tr><td>RDS (db.t3.micro)</td><td>Banco MySQL persistente e privado</td></tr>
+  <tr><td>S3</td><td>Hospedagem do frontend estático</td></tr>
+  <tr><td>CloudFront</td><td>HTTPS, CDN e roteamento S3 + API</td></tr>
+  <tr><td>OAC</td><td>S3 acessível somente pelo CloudFront</td></tr>
+  <tr><td>Terraform</td><td>Infraestrutura como código (IaC)</td></tr>
+</table>
+
+<h3>VPC — Rede</h3>
+<table>
+  <tr><th>Componente</th><th>Configuração</th></tr>
+  <tr><td>VPC</td><td>10.0.0.0/16 — DNS habilitado</td></tr>
+  <tr><td>Subnet pública</td><td>10.0.1.0/24 (us-east-1a) → EC2</td></tr>
+  <tr><td>Subnets privadas</td><td>10.0.2.0/24 e 10.0.3.0/24 → RDS (2 AZs)</td></tr>
+  <tr><td>Internet Gateway</td><td>Internet só pela subnet pública</td></tr>
+</table>
+
+<h3>Security Groups (Firewall)</h3>
+<div class="box green">
+  <strong>EC2 (Backend):</strong> porta 5000 liberada <em>apenas</em> para IPs do CloudFront (prefix list AWS). SSH na porta 22 para gerenciamento.
+</div>
+<div class="box green">
+  <strong>RDS (Banco):</strong> porta 3306 liberada <em>somente</em> para o Security Group da EC2 — o banco não é acessível pela internet.
+</div>
+
+<h2>6. Deploy automatizado (Terraform)</h2>
+<p>Um único <strong>terraform apply</strong> executa todo o fluxo:</p>
+<ol style="margin-left:18px;margin-bottom:10px">
+  <li>Cria VPC, subnets, security groups e rotas</li>
+  <li>Sobe RDS MySQL privado</li>
+  <li>Sobe EC2: instala dependências, clona GitHub, cria .env, configura systemd</li>
+  <li>Envia medsystem_banco.sql da máquina local → EC2 via SSH (nunca vai ao GitHub)</li>
+  <li>EC2 importa o schema no RDS pela rede privada</li>
+  <li>Inicia o Flask somente após o banco estar pronto</li>
+  <li>Cria bucket S3, monta index.html (substitui Jinja includes) e publica frontend</li>
+  <li>Cria CloudFront e exibe URL HTTPS final</li>
+</ol>
+
+<div class="box amber">
+  <strong>Resultado:</strong> <code>terraform output</code> → URL <code>https://xxxx.cloudfront.net</code>
+</div>
+
+<h2>7. Banco de dados (destaque técnico)</h2>
+<ul>
+  <li><strong>Tabelas:</strong> usuarios, medicos, paciente, consulta, exames, prescricoes, diagnosticos, receitas, despesas, mensagens, cid10, logs_auditoria</li>
+  <li><strong>Stored Procedures:</strong> cadastrar paciente, agendar/cancelar consulta, registrar prontuário, registrar pagamento</li>
+  <li><strong>Triggers:</strong> auditoria automática de alterações</li>
+  <li><strong>Views:</strong> agenda do dia, histórico do paciente, financeiro mensal, exames pendentes</li>
+</ul>
+
+<h2>8. Segurança</h2>
+<ul>
+  <li>HTTPS via CloudFront (acesso do usuário sempre criptografado)</li>
+  <li>S3 privado — leitura apenas pelo CloudFront (OAC)</li>
+  <li>API na EC2 acessível somente via CloudFront</li>
+  <li>RDS sem IP público (subnets privadas)</li>
+  <li>Senhas com hash Bcrypt + autenticação JWT</li>
+  <li>Credenciais, .pem e .sql fora do Git (.gitignore)</li>
+</ul>
+
+<div class="page-break"></div>
+
+<h2>9. Roteiro de demonstração (5–8 min)</h2>
+<ol style="margin-left:18px;margin-bottom:10px">
+  <li>Abrir URL do CloudFront (HTTPS) — mostrar responsividade no celular</li>
+  <li>Fazer login (JWT em ação)</li>
+  <li>Mostrar Dashboard com dados da API</li>
+  <li>Abrir Agenda ou Pacientes — CRUD integrado</li>
+  <li>Mostrar Prontuário ou Exames — módulo clínico completo</li>
+  <li>No DevTools (Network): chamadas <code>/api/...</code> via CloudFront</li>
+  <li>Explicar diagrama: S3 + EC2 + RDS + CloudFront</li>
+</ol>
+
+<h2>10. Perguntas frequentes</h2>
+<table>
+  <tr><th>Pergunta</th><th>Resposta</th></tr>
+  <tr><td>Por que separar S3 e EC2?</td><td>Escalabilidade e custo: estáticos no S3+CDN; lógica na EC2</td></tr>
+  <tr><td>Por que CloudFront na frente?</td><td>HTTPS, cache do frontend e controle de acesso à API</td></tr>
+  <tr><td>Como o banco entra no RDS?</td><td>Importação pela EC2, dentro da VPC, via rede privada</td></tr>
+  <tr><td>O que é Terraform?</td><td>Infraestrutura como código — reproduzível e versionável</td></tr>
+  <tr><td>Autenticação?</td><td>JWT no login; rotas protegidas exigem Bearer token</td></tr>
+</table>
+
+<h2>11. Checklist antes da apresentação</h2>
+<ul class="checklist">
+  <li>terraform apply feito e URL do CloudFront anotada</li>
+  <li>Login testado na URL de produção</li>
+  <li>Diagrama de arquitetura preparado (slide ou impresso)</li>
+  <li>Plano B: python run_app.py → localhost:5000</li>
+  <li>GitHub atualizado e acessível</li>
+</ul>
+
+<h2>12. Fechamento</h2>
+<div class="quote">
+  "O MedSystem PRO une um sistema clínico funcional — API REST, banco relacional avançado e interface moderna — a uma arquitetura cloud na AWS com boas práticas de segurança. É desenvolvimento full stack e cloud computing integrados em um único projeto."
+</div>
+
+<div class="footer">
+  MedSystem PRO · Amostratec · Documento gerado para apresentação acadêmica
+</div>
+
+</body>
+</html>
