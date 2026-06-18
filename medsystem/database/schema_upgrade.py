@@ -40,6 +40,7 @@ MIGRACOES = {
     'paciente': [
         ('data_cadastro', 'DATETIME NULL DEFAULT CURRENT_TIMESTAMP'),
         ('ativo', 'TINYINT(1) NOT NULL DEFAULT 1'),
+        ('id_usuario', 'INT NULL UNIQUE'),
     ],
     'exames': [
         ('id_paciente', 'INT NULL'),
@@ -57,6 +58,9 @@ MIGRACOES = {
 MODIFICACOES = {
     'diagnosticos': [
         ('gravidade', 'VARCHAR(20) NULL'),
+    ],
+    'usuarios': [
+        ('tipo', 'VARCHAR(20) NOT NULL'),
     ],
 }
 

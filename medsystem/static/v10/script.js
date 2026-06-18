@@ -66,6 +66,7 @@ function doLogin() {
     currentUser = data.usuario;
     loginSuccess(data.usuario);
     if (typeof carregarNotificacoes === 'function') carregarNotificacoes();
+  if (typeof atualizarBadgeMensagens === 'function') atualizarBadgeMensagens();
   })
   .catch(error => {
     console.error('Erro login:', error);
@@ -126,7 +127,9 @@ function loginSuccess(user) {
   if (sbRole) {
     const roleText = user.tipo === 'medico'
       ? ((user.crm || 'CRM N/A') + ' · ' + (user.especialidade || 'Médico'))
-      : (user.tipo || 'Usuário');
+      : user.tipo === 'paciente'
+        ? 'Portal do Paciente'
+        : (user.tipo || 'Usuário');
     sbRole.textContent = roleText;
   }
 
@@ -166,6 +169,17 @@ function loginSuccess(user) {
   }
 
   showToast('Bem-vindo, ' + user.nome + '! 👋', 'success');
+
+  if (typeof aplicarPermissoesPaciente === 'function') aplicarPermissoesPaciente(user);
+
+  if (user.tipo === 'paciente') {
+    showPage('portal_inicio');
+    if (typeof carregarModuloPro === 'function') carregarModuloPro('portal_inicio');
+    if (typeof carregarNotificacoes === 'function') carregarNotificacoes();
+    if (typeof atualizarBadgePortalNotif === 'function') atualizarBadgePortalNotif();
+    return;
+  }
+
   showPage('dashboard');
 
   carregarDashboard();
@@ -177,6 +191,7 @@ function loginSuccess(user) {
 
   if (typeof aplicarPermissoesEquipe === 'function') aplicarPermissoesEquipe(user);
   if (typeof carregarNotificacoes === 'function') carregarNotificacoes();
+  if (typeof atualizarBadgeMensagens === 'function') atualizarBadgeMensagens();
 
   if (user.tipo === 'admin' || user.tipo === 'medico') {
     if (typeof carregarEspecialidades === 'function') carregarEspecialidades();

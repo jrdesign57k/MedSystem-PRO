@@ -15,6 +15,7 @@ class Usuario(db.Model):
     criado_em = db.Column(db.DateTime, default=datetime.utcnow)
     
     medico = db.relationship('Medico', backref='usuario', uselist=False)
+    paciente_vinculo = db.relationship('Paciente', backref='usuario', uselist=False)
 
     def set_senha(self, senha):
         self.senha_hash = bcrypt.generate_password_hash(senha).decode('utf-8')
@@ -136,6 +137,8 @@ class Paciente(db.Model):
     # Observações clínicas (renomeado de observacoes)
     observacoes_clinicas = db.Column(db.Text, nullable=True)
 
+    id_usuario = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=True, unique=True)
+
     def to_dict(self):
         return {
             'id': self.id_paciente,
@@ -176,7 +179,8 @@ class Paciente(db.Model):
             'alcoolismo': self.alcoolismo,
             'atividade_fisica': self.atividade_fisica,
             'observacoes_clinicas': self.observacoes_clinicas,
-            'ativo': self.ativo
+            'ativo': self.ativo,
+            'id_usuario': self.id_usuario,
         }
 
 # ════════════════════════════════════════════════════════════
@@ -540,6 +544,34 @@ class Mensagem(db.Model):
             'lida': self.lida,
             'remetente': self.remetente.nome if self.remetente else None,
             'destinatario': self.destinatario.nome if self.destinatario else None
+        }
+
+# ════════════════════════════════════════════════════════════
+# NOTIFICAÇÕES DO PORTAL DO PACIENTE
+# ════════════════════════════════════════════════════════════
+class NotificacaoPaciente(db.Model):
+    __tablename__ = 'notificacoes_paciente'
+    id = db.Column(db.Integer, primary_key=True)
+    id_paciente = db.Column(db.Integer, db.ForeignKey('paciente.id_paciente'), nullable=False)
+    tipo = db.Column(db.String(30), nullable=False)  # exame, recado, consulta
+    titulo = db.Column(db.String(200), nullable=False)
+    mensagem = db.Column(db.Text, nullable=False)
+    id_referencia = db.Column(db.Integer, nullable=True)
+    lida = db.Column(db.Boolean, default=False)
+    data_criacao = db.Column(db.DateTime, default=datetime.utcnow)
+
+    paciente = db.relationship('Paciente', backref='notificacoes')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'id_paciente': self.id_paciente,
+            'tipo': self.tipo,
+            'titulo': self.titulo,
+            'mensagem': self.mensagem,
+            'id_referencia': self.id_referencia,
+            'lida': self.lida,
+            'data_criacao': self.data_criacao.isoformat() if self.data_criacao else None,
         }
 
 # ════════════════════════════════════════════════════════════

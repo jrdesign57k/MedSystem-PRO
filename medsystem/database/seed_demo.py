@@ -6,7 +6,7 @@ from datetime import datetime, date, timedelta
 from extensions import db
 from models import (
     Usuario, Medico, Paciente, Consulta, SinalVital, Diagnostico,
-    Exame, TipoExame, Receita, Despesa, PrecoConsulta, CID10
+    Exame, TipoExame, Receita, Despesa, PrecoConsulta, CID10, Mensagem
 )
 
 MARCA_CPF = '52998224725'  # Carlos Alberto — prontuário médio (MODERADA)
@@ -493,10 +493,72 @@ def seed_cid10():
     print(f'[OK] {len(cid_data)} registros de CID-10 inseridos')
 
 
+def seed_mensagens_demo():
+    """Conversas demo entre recepção, médico e admin."""
+    if Mensagem.query.first():
+        return False
+
+    recepcao = Usuario.query.filter_by(email='recepcao@medsystem.com').first()
+    medico = Usuario.query.filter_by(email='drcarlos@medsystem.com').first()
+    admin = Usuario.query.filter_by(email='medico@medsystem.com').first()
+    if not recepcao or not medico:
+        print('[INFO] Seed mensagens: usuarios demo nao encontrados - pulando')
+        return False
+
+    agora = datetime.utcnow()
+    mensagens = [
+        Mensagem(
+            id_remetente=recepcao.id,
+            id_destinatario=medico.id,
+            conteudo='Dr. Carlos, o paciente Carlos Alberto chegou para a consulta das 09:00.',
+            data_envio=agora - timedelta(hours=2),
+            lida=False,
+        ),
+        Mensagem(
+            id_remetente=medico.id,
+            id_destinatario=recepcao.id,
+            conteudo='Obrigado, Ana. Já estou a caminho da sala de consulta.',
+            data_envio=agora - timedelta(hours=1, minutes=55),
+            lida=True,
+        ),
+        Mensagem(
+            id_remetente=recepcao.id,
+            id_destinatario=medico.id,
+            conteudo='Exames do João da Silva também chegaram. Posso anexar ao prontuário?',
+            data_envio=agora - timedelta(hours=1, minutes=30),
+            lida=False,
+        ),
+    ]
+
+    if admin:
+        mensagens.extend([
+            Mensagem(
+                id_remetente=admin.id,
+                id_destinatario=recepcao.id,
+                conteudo='Ana, favor confirmar a agenda de amanhã antes das 18h.',
+                data_envio=agora - timedelta(minutes=45),
+                lida=False,
+            ),
+            Mensagem(
+                id_remetente=recepcao.id,
+                id_destinatario=admin.id,
+                conteudo='Confirmado! Todas as consultas de amanhã estão agendadas.',
+                data_envio=agora - timedelta(minutes=20),
+                lida=True,
+            ),
+        ])
+
+    db.session.add_all(mensagens)
+    db.session.commit()
+    print(f'[OK] {len(mensagens)} mensagens demo inseridas')
+    return True
+
+
 def executar_seeds():
     """Roda todos os seeds de demonstração."""
     seed_cid10()
     normalizar_gravidades()
     seed_dados_demo()
     seed_pacientes_risco()
+    seed_mensagens_demo()
     normalizar_gravidades()

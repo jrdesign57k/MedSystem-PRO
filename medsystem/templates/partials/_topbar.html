@@ -1,5 +1,5 @@
 <header class="topbar">
-  <div class="topbar-search">
+  <div class="topbar-search" id="topbar-staff-search">
     <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
     <input placeholder="Buscar paciente por nome ou CPF..." id="globalSearch" autocomplete="off"
            oninput="globalSearchFn(this.value)" onfocus="globalSearchFn(this.value)"/>
@@ -20,15 +20,15 @@
       </button>
       <div class="notif-panel" id="notifPanel">
         <div class="notif-header">
-          <span style="font-size:13px;font-weight:700">Alertas clínicos</span>
-          <span style="font-size:12px;color:var(--blue-mid);cursor:pointer" onclick="marcarNotificacoesLidas()">Marcar lidas</span>
+          <span style="font-size:13px;font-weight:700" id="notif-panel-title">Alertas clínicos</span>
+          <span style="font-size:12px;color:var(--blue-mid);cursor:pointer" id="notif-panel-action" onclick="marcarNotificacoesLidas()">Marcar lidas</span>
         </div>
         <div id="notifList">
           <div class="notif-empty">Carregando alertas...</div>
         </div>
       </div>
     </div>
-    <button class="topbar-btn" type="button" onclick="irParaEquipe()" title="Usuários e equipe" aria-label="Usuários e equipe">
+    <button class="topbar-btn" type="button" id="topbar-btn-equipe" onclick="irParaEquipe()" title="Usuários e equipe" aria-label="Usuários e equipe">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 10-16 0"/></svg>
     </button>
   </div>

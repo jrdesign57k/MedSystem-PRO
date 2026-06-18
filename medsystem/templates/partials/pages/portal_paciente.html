@@ -1,0 +1,81 @@
+<div id="page-portal_inicio" class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Olá, <span id="portal-nome-paciente">Paciente</span></div>
+      <div class="page-sub">Portal do paciente — acompanhe exames, prontuário e avisos do médico</div>
+    </div>
+  </div>
+
+  <div class="grid-3 mb16">
+    <div class="card metric-card" style="cursor:pointer" onclick="showPage('portal_exames')">
+      <div class="metric-label">Meus Exames</div>
+      <div class="metric-value" id="portal-resumo-exames">—</div>
+      <div class="metric-sub">Solicitações e resultados</div>
+    </div>
+    <div class="card metric-card" style="cursor:pointer" onclick="showPage('portal_prontuario')">
+      <div class="metric-label">Meu Prontuário</div>
+      <div class="metric-value" id="portal-resumo-consultas">—</div>
+      <div class="metric-sub">Histórico de consultas</div>
+    </div>
+    <div class="card metric-card" style="cursor:pointer" onclick="showPage('portal_notificacoes')">
+      <div class="metric-label">Notificações</div>
+      <div class="metric-value" id="portal-resumo-notif">—</div>
+      <div class="metric-sub">Avisos do médico e resultados</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><span class="card-title">Últimas notificações</span></div>
+    <div id="portal-inicio-notifs" style="padding:8px 0">
+      <div style="padding:16px;color:#999;text-align:center">Carregando...</div>
+    </div>
+  </div>
+</div>
+
+<div id="page-portal_exames" class="page">
+  <div class="page-header">
+    <div><div class="page-title">Meus Exames</div><div class="page-sub">Resultados liberados pelo médico</div></div>
+  </div>
+  <div class="card">
+    <div class="table-wrap">
+      <table id="tabela-portal-exames">
+        <thead><tr><th>Exame</th><th>Médico</th><th>Solicitado</th><th>Status</th><th>Resultado</th></tr></thead>
+        <tbody><tr><td colspan="5" style="text-align:center;color:#999;">Carregando...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div id="page-portal_prontuario" class="page">
+  <div class="page-header">
+    <div><div class="page-title">Meu Prontuário</div><div class="page-sub">Consultas, diagnósticos e orientações</div></div>
+  </div>
+  <div class="col-32">
+    <div class="card" style="max-height:560px;overflow-y:auto">
+      <div class="card-header"><span class="card-title">Consultas</span></div>
+      <div id="portal-lista-consultas" style="padding:8px 0">
+        <div style="padding:16px;color:#999;text-align:center">Carregando...</div>
+      </div>
+    </div>
+    <div class="card" id="portal-detalhe-prontuario" style="max-height:560px;overflow-y:auto">
+      <div class="card-header"><span class="card-title">Detalhes da consulta</span></div>
+      <div id="portal-prontuario-body" style="padding:16px;color:#999;text-align:center">
+        Selecione uma consulta à esquerda
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="page-portal_notificacoes" class="page">
+  <div class="page-header">
+    <div><div class="page-title">Notificações</div><div class="page-sub">Avisos do médico e alertas de exames</div></div>
+    <div class="header-actions">
+      <button type="button" class="btn btn-ghost btn-sm" onclick="marcarTodasNotifPortal()">Marcar todas como lidas</button>
+    </div>
+  </div>
+  <div class="card">
+    <div id="portal-lista-notificacoes" style="padding:8px 0">
+      <div style="padding:16px;color:#999;text-align:center">Carregando...</div>
+    </div>
+  </div>
+</div>

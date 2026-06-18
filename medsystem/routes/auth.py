@@ -42,6 +42,11 @@ def login():
             if user.tipo == 'medico' and getattr(user, 'medico', None):
                 usuario_dados['crm'] = user.medico.crm
                 usuario_dados['especialidade'] = user.medico.especialidade.nome if user.medico.especialidade else 'N/A'
+
+            if user.tipo == 'paciente':
+                from models import Paciente
+                pac = Paciente.query.filter_by(id_usuario=user.id).first()
+                usuario_dados['id_paciente'] = pac.id_paciente if pac else None
                 
             return jsonify({
                 'sucesso': True, 
@@ -70,6 +75,11 @@ def obter_perfil():
         if usuario.tipo == 'medico' and getattr(usuario, 'medico', None):
             resposta['crm'] = usuario.medico.crm
             resposta['especialidade'] = usuario.medico.especialidade.nome if usuario.medico.especialidade else 'N/A'
+
+        if usuario.tipo == 'paciente':
+            from models import Paciente
+            pac = Paciente.query.filter_by(id_usuario=usuario.id).first()
+            resposta['id_paciente'] = pac.id_paciente if pac else None
             
         return jsonify({'sucesso': True, 'dados': resposta}), 200
     except Exception as e:

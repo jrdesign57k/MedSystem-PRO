@@ -58,6 +58,7 @@ def create_app():
         from medsystem.routes.mensagens import mensagens_bp
         from medsystem.routes.relatorios import relatorios_bp
         from medsystem.routes.prescricoes import prescricoes_bp
+        from medsystem.routes.portal import portal_bp
 
         # Registro das rotas da API
         app.register_blueprint(auth_bp, url_prefix='/api/auth')
@@ -72,6 +73,7 @@ def create_app():
         app.register_blueprint(mensagens_bp, url_prefix='/api/mensagens')
         app.register_blueprint(relatorios_bp, url_prefix='/api/relatorios')
         app.register_blueprint(prescricoes_bp, url_prefix='/api/prescricoes')
+        app.register_blueprint(portal_bp, url_prefix='/api/portal')
 
         # ──── CRIAÇÃO DO BANCO E DADOS INICIAIS ────
         try:
@@ -165,6 +167,9 @@ def create_app():
 
             from medsystem.database.seed_demo import executar_seeds
             executar_seeds()
+
+            from medsystem.database.seed_portal import seed_portal_pacientes
+            seed_portal_pacientes()
 
         except Exception as e:
             print(f'[AVISO] Erro no banco (tabelas ja existem ou ajuste pendente): {e}')

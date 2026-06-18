@@ -127,9 +127,23 @@ def registrar_resultado_exame(id):
         
         try:
             exame.resultado = dados.get('resultado')
+            exame.laudo = dados.get('laudo') or exame.laudo
             exame.status = dados.get('status', 'CONCLUIDO')
-            
+            if exame.status in ('CONCLUIDO', 'CONCLUÍDO', 'DISPONÍVEL', 'DISPONIVEL'):
+                exame.data_resultado = datetime.utcnow()
+
             db.session.flush()
+
+            status_norm = (exame.status or '').upper().replace('Í', 'I').replace('Á', 'A')
+            if status_norm in ('CONCLUIDO', 'DISPONIVEL') and exame.id_paciente:
+                from medsystem.utils.notificacoes_paciente import criar_notificacao_paciente
+                criar_notificacao_paciente(
+                    exame.id_paciente,
+                    'exame',
+                    f'Resultado disponível: {exame.nome_exame or "Exame"}',
+                    'Seu médico publicou o resultado de um exame. Acesse Meus Exames no portal.',
+                    id_referencia=exame.id,
+                )
             
             log = LogAuditoria(
                 tabela='exames',

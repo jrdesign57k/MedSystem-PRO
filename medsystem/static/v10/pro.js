@@ -42,6 +42,10 @@ function carregarModuloPro(pageId) {
     equipe: carregarEquipe,
     mensagens: carregarMensagens,
     prescricoes: carregarPrescricoes,
+    portal_inicio: carregarPortalInicio,
+    portal_exames: carregarPortalExames,
+    portal_prontuario: carregarPortalProntuario,
+    portal_notificacoes: carregarPortalNotificacoes,
     // prontuário: aberto via abrirProntuario() / abrirProntuarioInicio() — não resetar aqui
     novo_paciente: () => typeof carregarPacientes === 'function' && carregarPacientes()
   };
@@ -776,7 +780,47 @@ function _estiloAlertaRisco(gravidade) {
 async function carregarNotificacoes() {
   const list = document.getElementById('notifList');
   const dot = document.getElementById('notifDot');
+  const title = document.getElementById('notif-panel-title');
+  const action = document.getElementById('notif-panel-action');
   if (!list) return;
+
+  const u = currentUser || JSON.parse(localStorage.getItem('usuario') || 'null');
+  if (u && u.tipo === 'paciente') {
+    if (title) title.textContent = 'Minhas notificações';
+    if (action) action.onclick = marcarTodasNotifPortal;
+    list.innerHTML = '<div class="notif-empty">Carregando...</div>';
+    try {
+      const json = await apiGet('/api/portal/notificacoes');
+      const notifs = json.sucesso ? (json.dados || []) : [];
+      if (!notifs.length) {
+        list.innerHTML = '<div class="notif-empty">Nenhuma notificação no momento.</div>';
+        if (dot) dot.style.display = 'none';
+        return;
+      }
+      const naoLidas = json.nao_lidas || 0;
+      if (dot) dot.style.display = naoLidas > 0 ? '' : 'none';
+      list.innerHTML = notifs.slice(0, 10).map(n => {
+        const when = n.data_criacao ? new Date(n.data_criacao).toLocaleString('pt-BR') : '';
+        const click = n.tipo === 'exame'
+          ? `onclick="showPage('portal_exames'); document.getElementById('notifPanel')?.classList.remove('open'); marcarNotifPortal(${n.id})"`
+          : `onclick="showPage('portal_notificacoes'); document.getElementById('notifPanel')?.classList.remove('open'); marcarNotifPortal(${n.id})"`;
+        return `<div class="notif-item" ${click} style="${n.lida ? 'opacity:.7' : ''}">
+          <div class="notif-icon" style="background:var(--blue-light)"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/></svg></div>
+          <div style="min-width:0;flex:1">
+            <div class="notif-text"><strong>${escHtmlChat(n.titulo)}</strong></div>
+            <div class="notif-text" style="color:var(--text3);margin-top:2px">${escHtmlChat(n.mensagem)}</div>
+            <div class="notif-time">${when}</div>
+          </div>
+        </div>`;
+      }).join('');
+    } catch (e) {
+      list.innerHTML = '<div class="notif-empty">Erro ao carregar notificações.</div>';
+    }
+    return;
+  }
+
+  if (title) title.textContent = 'Alertas clínicos';
+  if (action) action.onclick = marcarNotificacoesLidas;
   list.innerHTML = '<div class="notif-empty">Carregando...</div>';
   try {
     const json = await apiGet('/api/dashboard/alertas');
@@ -812,10 +856,228 @@ async function carregarNotificacoes() {
 }
 
 function marcarNotificacoesLidas() {
+  const u = currentUser || JSON.parse(localStorage.getItem('usuario') || 'null');
+  if (u && u.tipo === 'paciente') {
+    marcarTodasNotifPortal();
+    return;
+  }
   const dot = document.getElementById('notifDot');
   if (dot) dot.style.display = 'none';
   showToast('Alertas marcados como lidos', 'info');
 }
+
+function ehPaciente() {
+  const u = currentUser || JSON.parse(localStorage.getItem('usuario') || 'null');
+  return u && u.tipo === 'paciente';
+}
+
+function aplicarPermissoesPaciente(user) {
+  const u = user || currentUser || JSON.parse(localStorage.getItem('usuario') || 'null');
+  const paciente = u && u.tipo === 'paciente';
+  const navStaff = document.getElementById('nav-staff');
+  const navPaciente = document.getElementById('nav-paciente');
+  const search = document.getElementById('topbar-staff-search');
+  const btnEquipe = document.getElementById('topbar-btn-equipe');
+  if (navStaff) navStaff.style.display = paciente ? 'none' : '';
+  if (navPaciente) navPaciente.style.display = paciente ? '' : 'none';
+  if (search) search.style.display = paciente ? 'none' : '';
+  if (btnEquipe) btnEquipe.style.display = paciente ? 'none' : '';
+  if (paciente && u.nome) {
+    const el = document.getElementById('portal-nome-paciente');
+    if (el) el.textContent = u.nome.split(' ')[0];
+    const sbRole = document.getElementById('sidebar-role');
+    if (sbRole) sbRole.textContent = 'Portal do Paciente';
+  }
+}
+
+function fmtDataPortal(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? '—' : d.toLocaleDateString('pt-BR');
+}
+
+function badgeStatusExame(status) {
+  const s = (status || '').toUpperCase();
+  if (s.includes('DISPON') || s.includes('CONCLU')) return 'badge-green';
+  if (s.includes('ANAL') || s.includes('AGUARD')) return 'badge-amber';
+  return 'badge-blue';
+}
+
+async function atualizarBadgePortalNotif() {
+  const badge = document.getElementById('nav-badge-portal-notif');
+  const dot = document.getElementById('notifDot');
+  if (!ehPaciente()) return;
+  try {
+    const json = await apiGet('/api/portal/notificacoes/nao-lidas');
+    const total = json.sucesso ? (json.total || 0) : 0;
+    if (badge) {
+      if (total > 0) {
+        badge.textContent = total > 99 ? '99+' : String(total);
+        badge.style.display = '';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+    if (dot) dot.style.display = total > 0 ? '' : 'none';
+  } catch (e) { /* ignore */ }
+}
+
+async function carregarPortalInicio() {
+  if (!ehPaciente()) return;
+  try {
+    const [exames, consultas, notifs] = await Promise.all([
+      apiGet('/api/portal/exames'),
+      apiGet('/api/portal/consultas'),
+      apiGet('/api/portal/notificacoes'),
+    ]);
+    const elEx = document.getElementById('portal-resumo-exames');
+    const elCon = document.getElementById('portal-resumo-consultas');
+    const elNot = document.getElementById('portal-resumo-notif');
+    if (elEx) elEx.textContent = exames.total ?? (exames.dados || []).length;
+    if (elCon) elCon.textContent = consultas.total ?? (consultas.dados || []).length;
+    if (elNot) elNot.textContent = notifs.nao_lidas ?? 0;
+
+    const box = document.getElementById('portal-inicio-notifs');
+    const lista = notifs.dados || [];
+    if (box) {
+      box.innerHTML = lista.length
+        ? lista.slice(0, 5).map(n => `
+          <div style="padding:12px 16px;border-bottom:1px solid var(--border);${n.lida ? 'opacity:.75' : ''}">
+            <strong>${escHtmlChat(n.titulo)}</strong>
+            <div style="font-size:13px;color:var(--text3);margin-top:4px">${escHtmlChat(n.mensagem)}</div>
+          </div>`).join('')
+        : '<div style="padding:16px;color:#999;text-align:center">Nenhuma notificação</div>';
+    }
+    atualizarBadgePortalNotif();
+  } catch (e) {
+    console.error('Erro portal inicio:', e);
+  }
+}
+
+async function carregarPortalExames() {
+  const tbody = document.querySelector('#tabela-portal-exames tbody');
+  if (!tbody) return;
+  try {
+    const json = await apiGet('/api/portal/exames');
+    const exames = json.dados || [];
+    tbody.innerHTML = exames.length
+      ? exames.map(e => `<tr>
+          <td class="td-name">${escHtmlChat(e.nome_exame)}</td>
+          <td>${escHtmlChat(e.medico)}</td>
+          <td>${fmtDataPortal(e.data_solicitacao)}</td>
+          <td><span class="badge ${badgeStatusExame(e.status)}">${escHtmlChat(e.status)}</span></td>
+          <td style="max-width:280px">${e.tem_resultado ? escHtmlChat(e.resultado || e.laudo || 'Disponível') : '<span style="color:#999">Aguardando</span>'}</td>
+        </tr>`).join('')
+      : '<tr><td colspan="5" style="text-align:center;color:#999">Nenhum exame registrado</td></tr>';
+  } catch (e) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#999">Erro ao carregar</td></tr>';
+  }
+}
+
+async function carregarPortalProntuario() {
+  const lista = document.getElementById('portal-lista-consultas');
+  if (!lista) return;
+  try {
+    const json = await apiGet('/api/portal/prontuario');
+    const consultas = json.dados || [];
+    lista.innerHTML = consultas.length
+      ? consultas.map(c => `
+        <div style="padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer" onclick="verProntuarioPortal(${c.id})">
+          <strong>${escHtmlChat(c.data)} ${escHtmlChat(c.hora)}</strong>
+          <div style="font-size:13px;color:var(--text3)">${escHtmlChat(c.medico)} · ${escHtmlChat(c.motivo || c.tipo_consulta || '')}</div>
+          <span class="badge badge-blue" style="margin-top:4px">${escHtmlChat(c.status)}</span>
+        </div>`).join('')
+      : '<div style="padding:16px;color:#999;text-align:center">Nenhuma consulta no prontuário</div>';
+    if (consultas.length) verProntuarioPortal(consultas[0].id);
+  } catch (e) {
+    lista.innerHTML = '<div style="padding:16px;color:#999;text-align:center">Erro ao carregar</div>';
+  }
+}
+
+async function verProntuarioPortal(idConsulta) {
+  const body = document.getElementById('portal-prontuario-body');
+  if (!body) return;
+  body.innerHTML = '<div style="padding:20px;color:#999;text-align:center">Carregando...</div>';
+  try {
+    const json = await apiGet('/api/portal/prontuario/' + idConsulta);
+    const c = json.dados;
+    if (!json.sucesso || !c) {
+      body.innerHTML = '<div style="padding:20px;color:#999">Consulta não encontrada</div>';
+      return;
+    }
+    const diag = (c.diagnosticos || []).map(d =>
+      `<li><strong>${escHtmlChat(d.cid)}</strong> — ${escHtmlChat(d.descricao)}</li>`).join('') || '<li>Nenhum diagnóstico registrado</li>';
+    const exames = (c.exames || []).map(e =>
+      `<li>${escHtmlChat(e.nome_exame)} — <span class="badge ${badgeStatusExame(e.status)}">${escHtmlChat(e.status)}</span>${e.resultado ? ': ' + escHtmlChat(e.resultado) : ''}</li>`).join('') || '<li>Nenhum exame nesta consulta</li>';
+    const sv = c.sinais_vitais || {};
+    body.innerHTML = `
+      <div style="padding:16px">
+        <h3 style="margin:0 0 8px">${escHtmlChat(c.data)} · ${escHtmlChat(c.medico)}</h3>
+        <p style="color:var(--text3);margin:0 0 16px">${escHtmlChat(c.especialidade)} · ${escHtmlChat(c.tipo_consulta || '')}</p>
+        ${c.queixa_principal ? `<p><strong>Queixa:</strong> ${escHtmlChat(c.queixa_principal)}</p>` : ''}
+        ${c.plano_terapeutico ? `<p><strong>Orientações:</strong> ${escHtmlChat(c.plano_terapeutico)}</p>` : ''}
+        ${Object.keys(sv).length ? `<p><strong>Sinais vitais:</strong> PA ${escHtmlChat(sv.pressao_arterial || '—')} · FC ${sv.frequencia_cardiaca || '—'} · Temp ${sv.temperatura || '—'}°C</p>` : ''}
+        <p><strong>Diagnósticos</strong></p><ul>${diag}</ul>
+        <p><strong>Exames</strong></p><ul>${exames}</ul>
+      </div>`;
+  } catch (e) {
+    body.innerHTML = '<div style="padding:20px;color:#999">Erro ao carregar prontuário</div>';
+  }
+}
+
+async function carregarPortalNotificacoes() {
+  const box = document.getElementById('portal-lista-notificacoes');
+  if (!box) return;
+  try {
+    const json = await apiGet('/api/portal/notificacoes');
+    const notifs = json.dados || [];
+    box.innerHTML = notifs.length
+      ? notifs.map(n => `
+        <div style="padding:14px 16px;border-bottom:1px solid var(--border);${n.lida ? 'opacity:.7' : ''}">
+          <div style="display:flex;justify-content:space-between;gap:8px">
+            <strong>${escHtmlChat(n.titulo)}</strong>
+            ${!n.lida ? `<button type="button" class="btn btn-ghost btn-sm" onclick="marcarNotifPortal(${n.id})">Marcar lida</button>` : ''}
+          </div>
+          <div style="font-size:13px;margin-top:6px">${escHtmlChat(n.mensagem)}</div>
+          <div style="font-size:11px;color:#aaa;margin-top:4px">${n.data_criacao ? new Date(n.data_criacao).toLocaleString('pt-BR') : ''}</div>
+        </div>`).join('')
+      : '<div style="padding:16px;color:#999;text-align:center">Nenhuma notificação</div>';
+    atualizarBadgePortalNotif();
+  } catch (e) {
+    box.innerHTML = '<div style="padding:16px;color:#999;text-align:center">Erro ao carregar</div>';
+  }
+}
+
+async function marcarNotifPortal(id) {
+  try {
+    await fetch('/api/portal/notificacoes/' + id + '/lida', { method: 'PUT', headers: apiHeaders() });
+    carregarPortalNotificacoes();
+    carregarPortalInicio();
+    carregarNotificacoes();
+    atualizarBadgePortalNotif();
+  } catch (e) { showToast('Erro ao marcar notificação', 'error'); }
+}
+
+async function marcarTodasNotifPortal() {
+  try {
+    await fetch('/api/portal/notificacoes/marcar-todas', { method: 'PUT', headers: apiHeaders() });
+    showToast('Notificações marcadas como lidas', 'info');
+    carregarPortalNotificacoes();
+    carregarPortalInicio();
+    carregarNotificacoes();
+    atualizarBadgePortalNotif();
+  } catch (e) { showToast('Erro ao marcar notificações', 'error'); }
+}
+
+window.aplicarPermissoesPaciente = aplicarPermissoesPaciente;
+window.carregarPortalInicio = carregarPortalInicio;
+window.carregarPortalExames = carregarPortalExames;
+window.carregarPortalProntuario = carregarPortalProntuario;
+window.carregarPortalNotificacoes = carregarPortalNotificacoes;
+window.verProntuarioPortal = verProntuarioPortal;
+window.marcarNotifPortal = marcarNotifPortal;
+window.marcarTodasNotifPortal = marcarTodasNotifPortal;
+window.atualizarBadgePortalNotif = atualizarBadgePortalNotif;
 
 window.aplicarPermissoesEquipe = aplicarPermissoesEquipe;
 window.toggleFormUsuario = toggleFormUsuario;
@@ -828,40 +1090,158 @@ window.ehAdministrador = ehAdministrador;
 
 let chatAtualId = null;
 
+function iniciaisChat(nome) {
+  if (!nome) return '??';
+  const partes = nome.trim().split(/\s+/).filter(Boolean);
+  if (!partes.length) return '??';
+  if (partes.length === 1) return partes[0].slice(0, 2).toUpperCase();
+  return (partes[0][0] + partes[partes.length - 1][0]).toUpperCase();
+}
+
+function escHtmlChat(texto) {
+  return String(texto || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function fmtHoraChat(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+}
+
+async function atualizarBadgeMensagens(total) {
+  const badge = document.getElementById('nav-badge-mensagens');
+  if (!badge) return;
+  try {
+    if (total === undefined || total === null) {
+      const json = await apiGet('/api/mensagens/nao-lidas');
+      total = json.sucesso ? (json.total || 0) : 0;
+    }
+    if (total > 0) {
+      badge.textContent = total > 99 ? '99+' : String(total);
+      badge.style.display = '';
+    } else {
+      badge.style.display = 'none';
+    }
+  } catch (e) {
+    badge.style.display = 'none';
+  }
+}
+
+async function carregarContatosChat() {
+  const sel = document.getElementById('chat-destinatario');
+  if (!sel) return;
+  try {
+    const json = await apiGet('/api/mensagens/contatos');
+    if (!json.sucesso) return;
+    const uid = Number(currentUser?.id);
+    sel.innerHTML = '<option value="">Selecione um colega...</option>' +
+      (json.dados || [])
+        .filter(u => Number(u.id) !== uid)
+        .map(u => {
+          const perfil = u.tipo === 'medico' ? 'Médico' : u.tipo === 'recepcao' ? 'Recepção' : u.tipo === 'admin' ? 'Admin' : u.tipo;
+          return `<option value="${u.id}">${escHtmlChat(u.nome)} (${perfil})</option>`;
+        }).join('');
+  } catch (e) {
+    console.error('Erro contatos chat:', e);
+  }
+}
+
+function toggleNovaConversa() {
+  const wrap = document.getElementById('chat-nova-wrap');
+  if (!wrap) return;
+  const abrir = wrap.style.display === 'none';
+  wrap.style.display = abrir ? 'block' : 'none';
+  if (abrir) carregarContatosChat();
+}
+
+async function iniciarNovaConversa() {
+  const sel = document.getElementById('chat-destinatario');
+  if (!sel || !sel.value) {
+    showToast('Selecione um colega para conversar', 'warn');
+    return;
+  }
+  const nome = sel.options[sel.selectedIndex].text.replace(/\s*\([^)]*\)$/, '');
+  await selectChat(parseInt(sel.value, 10), nome);
+  const wrap = document.getElementById('chat-nova-wrap');
+  if (wrap) wrap.style.display = 'none';
+}
+
 async function carregarMensagens() {
   try {
     const json = await apiGet('/api/mensagens');
     const lista = document.getElementById('chat-list');
-    if (!lista || !json.sucesso) return;
-    const conversas = Object.values(json.dados || {});
+    if (!lista) return;
+    if (!json.sucesso) {
+      lista.innerHTML = '<div style="padding:16px;color:#999;text-align:center">Erro ao carregar conversas</div>';
+      return;
+    }
+
+    const conversas = json.conversas || [];
     lista.innerHTML = conversas.length
-      ? conversas.map(c =>
-          `<div style="padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer" onclick="selectChat(${c.usuario_id},'${(c.nome||'').replace(/'/g,"\\'")}')">
-            <strong>${c.nome || 'Usuário'}</strong><br><small>${c.ultimas_mensagens?.[0] || ''}</small>
-          </div>`
-        ).join('')
-      : '<div style="padding:16px;color:#999;text-align:center">Nenhuma conversa</div>';
-  } catch (e) { console.error('Erro mensagens:', e); }
+      ? conversas.map(c => {
+          const badge = c.nao_lidas > 0
+            ? `<span style="float:right;background:var(--blue-mid);color:#fff;font-size:11px;padding:2px 7px;border-radius:10px">${c.nao_lidas}</span>`
+            : '';
+          return `<div class="chat-list-item" style="padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer" onclick="selectChat(${c.id},'${escHtmlChat(c.nome).replace(/'/g, "\\'")}')">
+            <strong>${escHtmlChat(c.nome)}</strong>${badge}
+            <br><small style="color:#888">${escHtmlChat(c.ultima_mensagem || c.ultimas_mensagens?.[0] || '')}</small>
+            <br><small style="color:#aaa">${escHtmlChat(c.ultimo_envio || '')}</small>
+          </div>`;
+        }).join('')
+      : '<div style="padding:16px;color:#999;text-align:center">Nenhuma conversa ainda.<br>Use <strong>+ Nova</strong> para iniciar.</div>';
+
+    await atualizarBadgeMensagens(json.total_nao_lidas);
+    await carregarContatosChat();
+  } catch (e) {
+    console.error('Erro mensagens:', e);
+  }
 }
 
 async function selectChat(usuarioId, nome) {
   chatAtualId = usuarioId;
   const titulo = document.getElementById('chat-header-name');
+  const sub = document.getElementById('chat-header-sub');
+  const avatar = document.getElementById('chat-header-avatar');
+  const input = document.getElementById('msg-input');
   if (titulo) titulo.textContent = nome || 'Conversa';
+  if (sub) sub.textContent = 'Conversa interna';
+  if (avatar) avatar.textContent = iniciaisChat(nome);
+  if (input) {
+    input.disabled = false;
+    input.focus();
+  }
+
   try {
     const json = await apiGet('/api/mensagens/' + usuarioId);
     const area = document.getElementById('chat-body');
     if (!area || !json.sucesso) return;
+    const uid = Number(currentUser?.id);
     area.innerHTML = (json.mensagens || []).map(m => {
-      const sent = m.id_remetente === currentUser?.id;
-      return `<div style="margin:8px 0;text-align:${sent ? 'right' : 'left'}"><span style="display:inline-block;padding:8px 12px;border-radius:10px;background:${sent ? 'var(--blue-mid)' : 'var(--surface2)'};${sent ? 'color:#fff;' : ''}">${m.conteudo}</span></div>`;
-    }).join('') || '<div style="color:#999;text-align:center;padding:20px">Inicie a conversa</div>';
-  } catch (e) { console.error('Erro conversa:', e); }
+      const sent = Number(m.id_remetente) === uid;
+      return `<div style="margin:8px 0;text-align:${sent ? 'right' : 'left'}">
+        <span style="display:inline-block;max-width:85%;padding:8px 12px;border-radius:10px;background:${sent ? 'var(--blue-mid)' : 'var(--surface2)'};${sent ? 'color:#fff;' : ''}">${escHtmlChat(m.conteudo)}</span>
+        <div style="font-size:11px;color:#aaa;margin-top:2px;${sent ? 'text-align:right' : ''}">${fmtHoraChat(m.data_envio)}</div>
+      </div>`;
+    }).join('') || '<div style="color:#999;text-align:center;padding:20px">Inicie a conversa enviando uma mensagem</div>';
+    area.scrollTop = area.scrollHeight;
+    carregarMensagens();
+    atualizarBadgeMensagens();
+  } catch (e) {
+    console.error('Erro conversa:', e);
+  }
 }
 
 async function sendMsg() {
   const input = document.getElementById('msg-input');
-  if (!input || !chatAtualId) { showToast('Selecione uma conversa', 'warn'); return; }
+  if (!input || !chatAtualId) {
+    showToast('Selecione ou inicie uma conversa', 'warn');
+    return;
+  }
   const texto = input.value.trim();
   if (!texto) return;
   try {
@@ -875,10 +1255,19 @@ async function sendMsg() {
       input.value = '';
       selectChat(chatAtualId, document.getElementById('chat-header-name')?.textContent);
     } else {
-      showToast(json.mensagem || 'Erro ao enviar', 'error');
+      showToast(json.erro || json.mensagem || 'Erro ao enviar', 'error');
     }
-  } catch (e) { showToast('Erro de conexão', 'error'); }
+  } catch (e) {
+    showToast('Erro de conexão', 'error');
+  }
 }
+
+window.carregarMensagens = carregarMensagens;
+window.selectChat = selectChat;
+window.sendMsg = sendMsg;
+window.toggleNovaConversa = toggleNovaConversa;
+window.iniciarNovaConversa = iniciarNovaConversa;
+window.atualizarBadgeMensagens = atualizarBadgeMensagens;
 
 async function agendarConsultaModal() {
   const pacId = document.getElementById('nc-pac')?.value;
