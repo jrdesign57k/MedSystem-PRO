@@ -1,0 +1,114 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  validate:
+    name: Validar codigo
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: Validar codigo Python
+        run: |
+          python -m py_compile app.py extensions.py models.py
+          python -c "
+          import os
+          os.environ['JWT_SECRET_KEY'] = 'ci-validation-only'
+          os.environ['DB_HOST'] = '127.0.0.1'
+          os.environ['DB_USER'] = 'test'
+          os.environ['DB_PASSWORD'] = 'test'
+          os.environ['DB_NAME'] = 'medsystem'
+          import extensions
+          import models
+          print('Imports OK')
+          "
+
+  deploy:
+    name: Deploy na AWS
+    needs: validate
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verificar secrets AWS
+        id: aws
+        env:
+          AWS_KEY: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        run: |
+          if [ -z "$AWS_KEY" ]; then
+            echo "configured=false" >> $GITHUB_OUTPUT
+            echo "::notice::Secrets AWS nao configurados — deploy AWS ignorado (validate concluido)."
+          else
+            echo "configured=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Configurar credenciais AWS
+        if: steps.aws.outputs.configured == 'true'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Deploy na EC2 via SSM
+        if: steps.aws.outputs.configured == 'true'
+        env:
+          EC2_INSTANCE_ID: ${{ secrets.EC2_INSTANCE_ID }}
+        run: |
+          if [ -z "$EC2_INSTANCE_ID" ]; then
+            echo "::warning::EC2_INSTANCE_ID nao configurado — pulando deploy SSM."
+            exit 0
+          fi
+
+          COMMAND_ID=$(aws ssm send-command \
+            --instance-ids "$EC2_INSTANCE_ID" \
+            --document-name "AWS-RunShellScript" \
+            --comment "MedSystem deploy ${GITHUB_SHA}" \
+            --parameters commands='[
+              "set -e",
+              "cd /opt/medsystem && git fetch origin && git reset --hard origin/main",
+              "python3 -m venv venv 2>/dev/null || true",
+              "source venv/bin/activate && pip install -r requirements.txt -q",
+              "sudo systemctl restart medsystem || true",
+              "sleep 5",
+              "curl -sf http://127.0.0.1/health || curl -sf http://127.0.0.1:5000/health"
+            ]' \
+            --query "Command.CommandId" \
+            --output text)
+
+          echo "SSM Command ID: $COMMAND_ID"
+          aws ssm wait command-executed \
+            --command-id "$COMMAND_ID" \
+            --instance-id "$EC2_INSTANCE_ID"
+
+          aws ssm get-command-invocation \
+            --command-id "$COMMAND_ID" \
+            --instance-id "$EC2_INSTANCE_ID" \
+            --query "[Status, StandardOutputContent, StandardErrorContent]"
+
+      - name: Sync assets estaticos para S3
+        if: steps.aws.outputs.configured == 'true'
+        env:
+          S3_BUCKET: ${{ secrets.S3_STATIC_BUCKET }}
+        run: |
+          if [ -n "$S3_BUCKET" ]; then
+            aws s3 sync medsystem/static "s3://$S3_BUCKET/static" --delete
+            echo "Assets sincronizados em s3://$S3_BUCKET/static"
+          else
+            echo "::warning::S3_STATIC_BUCKET nao configurado — pulando sync S3."
+          fi
